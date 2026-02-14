@@ -1,75 +1,140 @@
-# Installation
-> `npm install --save @types/cors`
+# accepts
 
-# Summary
-This package contains type definitions for cors (https://github.com/expressjs/cors/).
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-url]
+[![Node.js Version][node-version-image]][node-version-url]
+[![Build Status][github-actions-ci-image]][github-actions-ci-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-# Details
-Files were exported from https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/cors.
-## [index.d.ts](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/cors/index.d.ts)
-````ts
-/// <reference types="node" />
+Higher level content negotiation based on [negotiator](https://www.npmjs.com/package/negotiator).
+Extracted from [koa](https://www.npmjs.com/package/koa) for general use.
 
-import { IncomingHttpHeaders } from "http";
+In addition to negotiator, it allows:
 
-type StaticOrigin = boolean | string | RegExp | Array<boolean | string | RegExp>;
+- Allows types as an array or arguments list, ie `(['text/html', 'application/json'])`
+  as well as `('text/html', 'application/json')`.
+- Allows type shorthands such as `json`.
+- Returns `false` when no types match
+- Treats non-existent headers as `*`
 
-type CustomOrigin = (
-    requestOrigin: string | undefined,
-    callback: (err: Error | null, origin?: StaticOrigin) => void,
-) => void;
+## Installation
 
-declare namespace e {
-    interface CorsRequest {
-        method?: string | undefined;
-        headers: IncomingHttpHeaders;
-    }
-    interface CorsOptions {
-        /**
-         * @default '*'
-         */
-        origin?: StaticOrigin | CustomOrigin | undefined;
-        /**
-         * @default 'GET,HEAD,PUT,PATCH,POST,DELETE'
-         */
-        methods?: string | string[] | undefined;
-        allowedHeaders?: string | string[] | undefined;
-        exposedHeaders?: string | string[] | undefined;
-        credentials?: boolean | undefined;
-        maxAge?: number | undefined;
-        /**
-         * @default false
-         */
-        preflightContinue?: boolean | undefined;
-        /**
-         * @default 204
-         */
-        optionsSuccessStatus?: number | undefined;
-    }
-    type CorsOptionsDelegate<T extends CorsRequest = CorsRequest> = (
-        req: T,
-        callback: (err: Error | null, options?: CorsOptions) => void,
-    ) => void;
+This is a [Node.js](https://nodejs.org/en/) module available through the
+[npm registry](https://www.npmjs.com/). Installation is done using the
+[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+
+```sh
+$ npm install accepts
+```
+
+## API
+
+```js
+var accepts = require('accepts')
+```
+
+### accepts(req)
+
+Create a new `Accepts` object for the given `req`.
+
+#### .charset(charsets)
+
+Return the first accepted charset. If nothing in `charsets` is accepted,
+then `false` is returned.
+
+#### .charsets()
+
+Return the charsets that the request accepts, in the order of the client's
+preference (most preferred first).
+
+#### .encoding(encodings)
+
+Return the first accepted encoding. If nothing in `encodings` is accepted,
+then `false` is returned.
+
+#### .encodings()
+
+Return the encodings that the request accepts, in the order of the client's
+preference (most preferred first).
+
+#### .language(languages)
+
+Return the first accepted language. If nothing in `languages` is accepted,
+then `false` is returned.
+
+#### .languages()
+
+Return the languages that the request accepts, in the order of the client's
+preference (most preferred first).
+
+#### .type(types)
+
+Return the first accepted type (and it is returned as the same text as what
+appears in the `types` array). If nothing in `types` is accepted, then `false`
+is returned.
+
+The `types` array can contain full MIME types or file extensions. Any value
+that is not a full MIME type is passed to `require('mime-types').lookup`.
+
+#### .types()
+
+Return the types that the request accepts, in the order of the client's
+preference (most preferred first).
+
+## Examples
+
+### Simple type negotiation
+
+This simple example shows how to use `accepts` to return a different typed
+respond body based on what the client wants to accept. The server lists it's
+preferences in order and will get back the best match between the client and
+server.
+
+```js
+var accepts = require('accepts')
+var http = require('http')
+
+function app (req, res) {
+  var accept = accepts(req)
+
+  // the order of this list is significant; should be server preferred order
+  switch (accept.type(['json', 'html'])) {
+    case 'json':
+      res.setHeader('Content-Type', 'application/json')
+      res.write('{"hello":"world!"}')
+      break
+    case 'html':
+      res.setHeader('Content-Type', 'text/html')
+      res.write('<b>hello, world!</b>')
+      break
+    default:
+      // the fallback is text/plain, so no need to specify it above
+      res.setHeader('Content-Type', 'text/plain')
+      res.write('hello, world!')
+      break
+  }
+
+  res.end()
 }
 
-declare function e<T extends e.CorsRequest = e.CorsRequest>(
-    options?: e.CorsOptions | e.CorsOptionsDelegate<T>,
-): (
-    req: T,
-    res: {
-        statusCode?: number | undefined;
-        setHeader(key: string, value: string): any;
-        end(): any;
-    },
-    next: (err?: any) => any,
-) => void;
-export = e;
+http.createServer(app).listen(3000)
+```
 
-````
+You can test this out with the cURL program:
+```sh
+curl -I -H'Accept: text/html' http://localhost:3000/
+```
 
-### Additional Details
- * Last updated: Sat, 07 Jun 2025 02:15:25 GMT
- * Dependencies: [@types/node](https://npmjs.com/package/@types/node)
+## License
 
-# Credits
-These definitions were written by [Alan Plum](https://github.com/pluma), [Gaurav Sharma](https://github.com/gtpan77), and [Sebastian Beltran](https://github.com/bjohansebas).
+[MIT](LICENSE)
+
+[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/accepts/master
+[coveralls-url]: https://coveralls.io/r/jshttp/accepts?branch=master
+[github-actions-ci-image]: https://badgen.net/github/checks/jshttp/accepts/master?label=ci
+[github-actions-ci-url]: https://github.com/jshttp/accepts/actions/workflows/ci.yml
+[node-version-image]: https://badgen.net/npm/node/accepts
+[node-version-url]: https://nodejs.org/en/download
+[npm-downloads-image]: https://badgen.net/npm/dm/accepts
+[npm-url]: https://npmjs.org/package/accepts
+[npm-version-image]: https://badgen.net/npm/v/accepts
