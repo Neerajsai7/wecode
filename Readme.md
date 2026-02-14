@@ -1,276 +1,200 @@
-[![Express Logo](https://i.cloudup.com/zfY6lL7eFa-3000x3000.png)](https://expressjs.com/)
+node-oauth
+===========
+A simple oauth API for node.js .  This API allows users to authenticate against OAUTH providers, and thus act as OAuth consumers. It also has support for OAuth Echo, which is used for communicating with 3rd party media providers such as TwitPic and yFrog.
 
-**Fast, unopinionated, minimalist web framework for [Node.js](https://nodejs.org).**
+Tested against Twitter (http://twitter.com), term.ie (http://term.ie/oauth/example/), TwitPic, and Yahoo!
 
-**This project has a [Code of Conduct].**
+Also provides rudimentary OAuth2 support, tested against facebook, github, foursquare, google and Janrain.   For more complete usage examples please take a look at connect-auth (http://github.com/ciaranj/connect-auth)
 
-## Table of contents
+[![Clone in Koding](http://learn.koding.com/btn/clone_d.png)][koding]
+[koding]: https://koding.com/Teamwork?import=https://github.com/ciaranj/node-oauth/archive/master.zip&c=git1
+[![Pair on Thinkful](https://tf-assets-staging.s3.amazonaws.com/badges/thinkful_repo_badge.svg)][Thinkful]
+[Thinkful]: http://start.thinkful.com/node/?utm_source=github&utm_medium=badge&utm_campaign=node-oauth
 
-- [Table of contents](#table-of-contents)
-- [Installation](#installation)
-- [Features](#features)
-- [Docs \& Community](#docs--community)
-- [Quick Start](#quick-start)
-- [Philosophy](#philosophy)
-- [Examples](#examples)
-- [Contributing](#contributing)
-  - [Security Issues](#security-issues)
-  - [Running Tests](#running-tests)
-- [Current project team members](#current-project-team-members)
-  - [TC (Technical Committee)](#tc-technical-committee)
-    - [TC emeriti members](#tc-emeriti-members)
-  - [Triagers](#triagers)
-    - [Emeritus Triagers](#emeritus-triagers)
-- [License](#license)
+Installation
+============== 
+
+    $ npm install oauth
 
 
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][npm-downloads-url]
-[![Linux Build][github-actions-ci-image]][github-actions-ci-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
-[![OpenSSF Scorecard Badge][ossf-scorecard-badge]][ossf-scorecard-visualizer]
+Examples
+==========
 
+To run examples/tests install Mocha `$ npm install -g mocha` and run `$ mocha you-file-name.js`:
 
-```js
-import express from 'express'
+## OAuth1.0
 
-const app = express()
+```javascript
+describe('OAuth1.0',function(){
+  var OAuth = require('oauth');
 
-app.get('/', (req, res) => {
-  res.send('Hello World')
-})
-
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000')
-})
+  it('tests trends Twitter API v1.1',function(done){
+    var oauth = new OAuth.OAuth(
+      'https://api.twitter.com/oauth/request_token',
+      'https://api.twitter.com/oauth/access_token',
+      'your application consumer key',
+      'your application secret',
+      '1.0A',
+      null,
+      'HMAC-SHA1'
+    );
+    oauth.get(
+      'https://api.twitter.com/1.1/trends/place.json?id=23424977',
+      'your user token for this app', //test user token
+      'your user secret for this app', //test user secret            
+      function (e, data, res){
+        if (e) console.error(e);        
+        console.log(require('util').inspect(data));
+        done();      
+      });    
+  });
+});
 ```
 
-## Installation
+## OAuth2.0 
+```javascript
+describe('OAuth2',function(){
+  var OAuth = require('oauth');
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/).
-
-Before installing, [download and install Node.js](https://nodejs.org/en/download/).
-Node.js 18 or higher is required.
-
-If this is a brand new project, make sure to create a `package.json` first with
-the [`npm init` command](https://docs.npmjs.com/creating-a-package-json-file).
-
-Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
-
-```bash
-npm install express
+   it('gets bearer token', function(done){
+     var OAuth2 = OAuth.OAuth2;    
+     var twitterConsumerKey = 'your key';
+     var twitterConsumerSecret = 'your secret';
+     var oauth2 = new OAuth2(server.config.keys.twitter.consumerKey,
+       twitterConsumerSecret, 
+       'https://api.twitter.com/', 
+       null,
+       'oauth2/token', 
+       null);
+     oauth2.getOAuthAccessToken(
+       '',
+       {'grant_type':'client_credentials'},
+       function (e, access_token, refresh_token, results){
+       console.log('bearer: ',access_token);
+       done();
+     });
+   });
 ```
 
-Follow [our installing guide](https://expressjs.com/en/starter/installing.html)
-for more information.
+Change History
+============== 
+* 0.10.2
+    - OAuth1/2: Added a .npmignore to stop shipping tests and other noise in the published package
+* 0.10.1
+    - OAuth1:   Supports HMAC-256 signature hashing (Non standard, but common signature e.g. https://developer.adobe.com/commerce/webapi/get-started/authentication/gs-authentication-oauth/) (Thank you Martino Massalini)
+    - OAuth1/2: Adds devcontainer support for use in Vscode (Thanks PinyiSong)
+* 0.10.0
+    - OAuth2:   No longer allows repeated callbacks 'on error' to propagate to calling code (googleapi often did this apparently)
+* 0.9.15
+    - OAuth2:   Allow specification of agent
+* 0.9.14
+    - OAuth2:   Extend 'successful' token responses to include anything in the 2xx range.
+* 0.9.13
+    - OAuth2:   Fixes the "createCredentials() is deprecated, use tls.createSecureContext instead" message. (thank you AJ ONeal)
+* 0.9.12
+    - OAuth1/2: Can now pass Buffer instance directly for PUTs+POSTs (thank you Evan Prodromou)
+    - OAuth1:   Improve interoperability with libraries that mess with the prototype. (thank you Jose Ignacio Andres)
+    - OAuth2:   Adds PUT support for OAuth2 (thank you Derek Brooks)
+    - OAuth1:   Improves use_strict compatibility (thank you Ted Goddard)
+* 0.9.11
+    - OAuth2:   No longer sends the type=webserver argument with the OAuth2 requests (thank you bendiy)
+    - OAuth2:   Provides a default (and overrideable) User-Agent header (thanks to Andrew Martens & Daniel Mahlow)
+    - OAuth1:   New followRedirects client option (true by default) (thanks to Pieter Joost van de Sande)
+    - OAuth1:   Adds RSA-SHA1 support (thanks to Jeffrey D. Van Alstine  & Michael Garvin &  Andreas Knecht)
+* 0.9.10
+    - OAuth2:   Addresses 2 issues that came in with 0.9.9, #129 & #125 (thank you José F. Romaniello)
+* 0.9.9
+    - OAuth1:   Fix the mismatch between the output of querystring.stringify() and this._encodeData(). (thank you rolandboon)
+    - OAuth2:   Adds Authorization Header and supports extra headers by default ( thanks to Brian Park)
+* 0.9.8
+    - OAuth1:   Support overly-strict OAuth server's that require whitespace separating the Authorization Header parameters  (e.g. 500px.com) (Thanks to Christian Schwarz)
+    - OAuth1:   Fix incorrect double-encoding of PLAINTEXT OAuth connections (Thanks to Joe Rozner)
+    - OAuth1:   Minor safety check added when checking hostnames. (Thanks to Garrick Cheung)
+* 0.9.7
+    - OAuth2:   Pass back any extra response data for calls to getOAuthAccessToken (Thanks to Tang Bo Hao)
+    - OAuth2:   Don't force a https request if given a http url (Thanks to Damien Mathieu)
+    - OAuth2:   Supports specifying a grant-type of 'refresh-token' (Thanks to Luke Baker)
+* 0.9.6
+    - OAuth2:   Support for 302 redirects (Thanks Patrick Negri). 
+    - OAuth1/2: Some code tidying. ( Thanks to Raoul Millais )  
+* 0.9.5
+    - OAuth1:   Allow usage of HTTP verbs other than GET for retrieving the access and request tokens (Thanks to Raoul Millais)  
+* 0.9.4
+    - OAuth1/2: Support for OAuth providers that drop connections (don't send response lengths? [Google]) 
+    - OAuth2:   Change getOAuthAccessToken to POST rather than GET ( Possible Breaking change!!! ... re-tested against Google, Github, Facebook, FourSquare and Janrain and seems ok .. is closer to the spec (v20) )  
+* 0.9.3
+    - OAuth1:   Adds support for following 301 redirects (Thanks bdickason) 
+* 0.9.2 
+    - OAuth1:   Correct content length calculated for non-ascii post bodies (Thanks selead)  
+    - OAuth1:   Allowed for configuration of the 'access token' name used when requesting protected resources (OAuth2)  
+* 0.9.1
+    - OAuth1:   Added support for automatically following 302 redirects (Thanks neyric) 
+    - OAuth1:   Added support for OAuth Echo (Thanks Ryan LeFevre). 
+    - OAuth1:   Improved handling of 2xx responses (Thanks Neil Mansilla).  
+* 0.9.0
+    - OAuth1/2: Compatibility fixes to bring node-oauth up to speed with node.js 0.4x [thanks to Rasmus Andersson for starting the work ]  
+* 0.8.4
+    - OAuth1:   Fixed issue #14 (Parameter ordering ignored encodings).
+    - OAuth1:   Added support for repeated parameter names.
+    - OAuth1/2: Implements issue #15 (Use native SHA1 if available, 10x speed improvement!).
+    - OAuth2:   Fixed issue #16 (Should use POST when requesting access tokens.).
+    - OAuth2:   Fixed Issue #17 (OAuth2 spec compliance).  
+    - OAuth1:   Implemented enhancement #13 (Adds support for PUT & DELETE http verbs). 
+    - OAuth1:   Fixes issue #18 (Complex/Composite url arguments [thanks novemberborn])  
+* 0.8.3
+    - OAuth1:   Fixed an issue where the auth header code depended on the Array's toString method (Yohei Sasaki) Updated the getOAuthRequestToken method so we can access google's OAuth secured methods. Also re-implemented and fleshed out the test suite.  
+* 0.8.2
+    - OAuth1:   The request returning methods will now write the POST body if provided (Chris Anderson), the code responsible for manipulating the headers is a bit safe now when working with other code (Paul McKellar)
+    - Package:  Tweaked the package.json to use index.js instead of main.js  
+* 0.8.1
+    - OAuth1:   Added mechanism to get hold of a signed Node Request object, ready for attaching response listeners etc. (Perfect for streaming APIs)  
+* 0.8.0
+    - OAuth1:   Standardised method capitalisation, the old getOauthAccessToken is now getOAuthAccessToken (Breaking change to existing code)  
+* 0.7.7
+    - OAuth1:   Looks like non oauth_ parameters where appearing within the Authorization headers, which I believe to be incorrect.  
+* 0.7.6
+    - OAuth1:   Added in oauth_verifier property to getAccessToken required for 1.0A  
+* 0.7.5
+    - Package:  Added in a main.js to simplify the require'ing of OAuth  
+* 0.7.4
+    - OAuth1:   Minor change to add an error listener to the OAuth client (thanks troyk)  
+* 0.7.3
+    - OAuth2:   Now sends a Content-Length Http header to keep nginx happy :)  
+* 0.7.2
+    - OAuth1:   Fixes some broken unit tests!  
+* 0.7.0
+    - OAuth1/2: Introduces support for HTTPS end points and callback URLS for OAuth 1.0A and Oauth 2 (Please be aware that this was a breaking change to the constructor arguments order)  
 
-## Features
+Contributors (In no particular order)
+=====================================
 
-  * Robust routing
-  * Focus on high performance
-  * Super-high test coverage
-  * HTTP helpers (redirection, caching, etc)
-  * View system supporting 14+ template engines
-  * Content negotiation
-  * Executable for generating applications quickly
-
-## Docs & Community
-
-  * [Website and Documentation](https://expressjs.com/) - [[website repo](https://github.com/expressjs/expressjs.com)]
-  * [GitHub Organization](https://github.com/expressjs) for Official Middleware & Modules
-  * [Github Discussions](https://github.com/expressjs/discussions) for discussion on the development and usage of Express
-
-**PROTIP** Be sure to read the [migration guide to v5](https://expressjs.com/en/guide/migrating-5)
-
-## Quick Start
-
-  The quickest way to get started with express is to utilize the executable [`express(1)`](https://github.com/expressjs/generator) to generate an application as shown below:
-
-  Install the executable. The executable's major version will match Express's:
-
-```bash
-npm install -g express-generator@4
-```
-
-  Create the app:
-
-```bash
-express /tmp/foo && cd /tmp/foo
-```
-
-  Install dependencies:
-
-```bash
-npm install
-```
-
-  Start the server:
-
-```bash
-npm start
-```
-
-  View the website at: http://localhost:3000
-
-## Philosophy
-
-  The Express philosophy is to provide small, robust tooling for HTTP servers, making
-  it a great solution for single page applications, websites, hybrids, or public
-  HTTP APIs.
-
-  Express does not force you to use any specific ORM or template engine. With support for over
-  14 template engines via [@ladjs/consolidate](https://github.com/ladjs/consolidate),
-  you can quickly craft your perfect framework.
-
-## Examples
-
-  To view the examples, clone the Express repository:
-
-```bash
-git clone https://github.com/expressjs/express.git --depth 1 && cd express
-```
-
-  Then install the dependencies:
-
-```bash
-npm install
-```
-
-  Then run whichever example you want:
-
-```bash
-node examples/content-negotiation
-```
-
-## Contributing
-
-The Express.js project welcomes all constructive contributions. Contributions take many forms,
-from code for bug fixes and enhancements, to additions and fixes to documentation, additional
-tests, triaging incoming pull requests and issues, and more!
-
-See the [Contributing Guide] for more technical details on contributing.
-
-### Security Issues
-
-If you discover a security vulnerability in Express, please see [Security Policies and Procedures](SECURITY.md).
-
-### Running Tests
-
-To run the test suite, first install the dependencies:
-
-```bash
-npm install
-```
-
-Then run `npm test`:
-
-```bash
-npm test
-```
-
-## Current project team members
-
-For information about the governance of the express.js project, see [GOVERNANCE.md](https://github.com/expressjs/discussions/blob/HEAD/docs/GOVERNANCE.md).
-
-The original author of Express is [TJ Holowaychuk](https://github.com/tj)
-
-[List of all contributors](https://github.com/expressjs/express/graphs/contributors)
-
-### TC (Technical Committee)
-
-* [UlisesGascon](https://github.com/UlisesGascon) - **Ulises Gascón** (he/him)
-* [jonchurch](https://github.com/jonchurch) - **Jon Church**
-* [wesleytodd](https://github.com/wesleytodd) - **Wes Todd**
-* [LinusU](https://github.com/LinusU) - **Linus Unnebäck**
-* [blakeembrey](https://github.com/blakeembrey) - **Blake Embrey**
-* [sheplu](https://github.com/sheplu) - **Jean Burellier**
-* [crandmck](https://github.com/crandmck) - **Rand McKinney**
-* [ctcpip](https://github.com/ctcpip) - **Chris de Almeida**
-
-<details>
-<summary>TC emeriti members</summary>
-
-#### TC emeriti members
-
-  * [dougwilson](https://github.com/dougwilson) - **Douglas Wilson**
-  * [hacksparrow](https://github.com/hacksparrow) - **Hage Yaapa**
-  * [jonathanong](https://github.com/jonathanong) - **jongleberry**
-  * [niftylettuce](https://github.com/niftylettuce) - **niftylettuce**
-  * [troygoode](https://github.com/troygoode) - **Troy Goode**
-</details>
-
-
-### Triagers
-
-* [aravindvnair99](https://github.com/aravindvnair99) - **Aravind Nair**
-* [bjohansebas](https://github.com/bjohansebas) - **Sebastian Beltran**
-* [carpasse](https://github.com/carpasse) - **Carlos Serrano**
-* [CBID2](https://github.com/CBID2) - **Christine Belzie**
-* [UlisesGascon](https://github.com/UlisesGascon) - **Ulises Gascón** (he/him)
-* [IamLizu](https://github.com/IamLizu) - **S M Mahmudul Hasan** (he/him)
-* [Phillip9587](https://github.com/Phillip9587) - **Phillip Barta**
-* [efekrskl](https://github.com/efekrskl) - **Efe Karasakal**
-
-
-<details>
-<summary>Triagers emeriti members</summary>
-
-#### Emeritus Triagers
-
-  * [AuggieH](https://github.com/AuggieH) - **Auggie Hudak**
-  * [G-Rath](https://github.com/G-Rath) - **Gareth Jones**
-  * [MohammadXroid](https://github.com/MohammadXroid) - **Mohammad Ayashi**
-  * [NawafSwe](https://github.com/NawafSwe) - **Nawaf Alsharqi**
-  * [NotMoni](https://github.com/NotMoni) - **Moni**
-  * [VigneshMurugan](https://github.com/VigneshMurugan) - **Vignesh Murugan**
-  * [davidmashe](https://github.com/davidmashe) - **David Ashe**
-  * [digitaIfabric](https://github.com/digitaIfabric) - **David**
-  * [e-l-i-s-e](https://github.com/e-l-i-s-e) - **Elise Bonner**
-  * [fed135](https://github.com/fed135) - **Frederic Charette**
-  * [firmanJS](https://github.com/firmanJS) - **Firman Abdul Hakim**
-  * [getspooky](https://github.com/getspooky) - **Yasser Ameur**
-  * [ghinks](https://github.com/ghinks) - **Glenn**
-  * [ghousemohamed](https://github.com/ghousemohamed) - **Ghouse Mohamed**
-  * [gireeshpunathil](https://github.com/gireeshpunathil) - **Gireesh Punathil**
-  * [jake32321](https://github.com/jake32321) - **Jake Reed**
-  * [jonchurch](https://github.com/jonchurch) - **Jon Church**
-  * [lekanikotun](https://github.com/lekanikotun) - **Troy Goode**
-  * [marsonya](https://github.com/marsonya) - **Lekan Ikotun**
-  * [mastermatt](https://github.com/mastermatt) - **Matt R. Wilson**
-  * [maxakuru](https://github.com/maxakuru) - **Max Edell**
-  * [mlrawlings](https://github.com/mlrawlings) - **Michael Rawlings**
-  * [rodion-arr](https://github.com/rodion-arr) - **Rodion Abdurakhimov**
-  * [sheplu](https://github.com/sheplu) - **Jean Burellier**
-  * [tarunyadav1](https://github.com/tarunyadav1) - **Tarun yadav**
-  * [tunniclm](https://github.com/tunniclm) - **Mike Tunnicliffe**
-  * [enyoghasim](https://github.com/enyoghasim) - **David Enyoghasim**
-  * [0ss](https://github.com/0ss) - **Salah**
-  * [import-brain](https://github.com/import-brain) - **Eric Cheng** (he/him)
-  * [dakshkhetan](https://github.com/dakshkhetan) - **Daksh Khetan** (he/him)
-  * [lucasraziel](https://github.com/lucasraziel) - **Lucas Soares Do Rego**
-  * [mertcanaltin](https://github.com/mertcanaltin) - **Mert Can Altin**
-  * [dpopp07](https://github.com/dpopp07) - **Dustin Popp**
-  * [Sushmeet](https://github.com/Sushmeet) - **Sushmeet Sunger**
-  * [3imed-jaberi](https://github.com/3imed-jaberi) - **Imed Jaberi**
-
-</details>
-
-
-## License
-
-  [MIT](LICENSE)
-
-[coveralls-image]: https://img.shields.io/coverallsCoverage/github/expressjs/express?branch=master
-[coveralls-url]: https://coveralls.io/r/expressjs/express?branch=master
-[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/expressjs/express/ci.yml?branch=master&label=ci
-[github-actions-ci-url]: https://github.com/expressjs/express/actions/workflows/ci.yml
-[npm-downloads-image]: https://img.shields.io/npm/dm/express
-[npm-downloads-url]: https://npmcharts.com/compare/express?minimal=true
-[npm-url]: https://npmjs.org/package/express
-[npm-version-image]: https://img.shields.io/npm/v/express
-[ossf-scorecard-badge]: https://api.scorecard.dev/projects/github.com/expressjs/express/badge
-[ossf-scorecard-visualizer]: https://ossf.github.io/scorecard-visualizer/#/projects/github.com/expressjs/express
-[Code of Conduct]: https://github.com/expressjs/.github/blob/HEAD/CODE_OF_CONDUCT.md
-[Contributing Guide]: https://github.com/expressjs/.github/blob/HEAD/CONTRIBUTING.md
+* Evan Prodromou
+* Jose Ignacio Andres
+* Ted Goddard
+* Derek Brooks
+* Ciaran Jessup - ciaranj@gmail.com
+* Mark Wubben - http://equalmedia.com/
+* Ryan LeFevre - http://meltingice.net
+* Raoul Millais
+* Patrick Negri - http://github.com/pnegri
+* Tang Bo Hao - http://github.com/btspoony
+* Damien Mathieu - http://42.dmathieu.com
+* Luke Baker - http://github.com/lukebaker
+* Christian Schwarz  - http://github.com/chrischw/
+* Joe Rozer - http://www.deadbytes.net
+* Garrick Cheung - http://www.garrickcheung.com/
+* rolandboon - http://rolandboon.com
+* Brian Park - http://github.com/yaru22
+* José F. Romaniello - http://github.com/jfromaniello
+* bendiy - https://github.com/bendiy
+* Andrew Martins - http://www.andrewmartens.com
+* Daniel Mahlow - https://github.com/dmahlow
+* Pieter Joost van de Sande - https://github.com/pjvds
+* Jeffrey D. Van Alstine
+* Michael Garvin
+* Andreas Knecht
+* AJ ONeal
+* Philip Skinner - https://github.com/PhilipSkinner
+* Tom Ciborski - https://ciborski.com/
+* Martino Massalini - https://github.com/massalinux
+* PinyiSong https://github.com/PinyiSong
