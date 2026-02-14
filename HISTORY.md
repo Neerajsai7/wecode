@@ -1,108 +1,83 @@
-0.6.3 / 2022-01-22
+1.8.1 / 2017-09-12
 ==================
 
-  * Revert "Lazy-load modules from main entry point"
+  * perf: replace regular expression with substring
 
-0.6.2 / 2019-04-29
+1.8.0 / 2017-02-18
 ==================
 
-  * Fix sorting charset, encoding, and language with extra parameters
+  * Use SHA1 instead of MD5 for ETag hashing
+    - Improves performance for larger entities
+    - Works with FIPS 140-2 OpenSSL configuration
 
-0.6.1 / 2016-05-02
+1.7.0 / 2015-06-08
 ==================
 
-  * perf: improve `Accept` parsing speed
-  * perf: improve `Accept-Charset` parsing speed
-  * perf: improve `Accept-Encoding` parsing speed
-  * perf: improve `Accept-Language` parsing speed
+  * Always include entity length in ETags for hash length extensions
+  * Generate non-Stats ETags using MD5 only (no longer CRC32)
+  * Improve stat performance by removing hashing
+  * Remove base64 padding in ETags to shorten
+  * Use MD5 instead of MD4 in weak ETags over 1KB
 
-0.6.0 / 2015-09-29
+1.6.0 / 2015-05-10
 ==================
 
-  * Fix including type extensions in parameters in `Accept` parsing
-  * Fix parsing `Accept` parameters with quoted equals
-  * Fix parsing `Accept` parameters with quoted semicolons
-  * Lazy-load modules from main entry point
-  * perf: delay type concatenation until needed
-  * perf: enable strict mode
-  * perf: hoist regular expressions
-  * perf: remove closures getting spec properties
-  * perf: remove a closure from media type parsing
-  * perf: remove property delete from media type parsing
+  * Improve support for JXcore
+  * Remove requirement of `atime` in the stats object
+  * Support "fake" stats objects in environments without `fs`
 
-0.5.3 / 2015-05-10
+1.5.1 / 2014-11-19
 ==================
 
-  * Fix media type parameter matching to be case-insensitive
+  * deps: crc@3.2.1
+    - Minor fixes
 
-0.5.2 / 2015-05-06
+1.5.0 / 2014-10-14
 ==================
 
-  * Fix comparing media types with quoted values
-  * Fix splitting media types with quoted commas
+  * Improve string performance
+  * Slightly improve speed for weak ETags over 1KB
 
-0.5.1 / 2015-02-14
+1.4.0 / 2014-09-21
 ==================
 
-  * Fix preference sorting to be stable for long acceptable lists
-
-0.5.0 / 2014-12-18
-==================
-
-  * Fix list return order when large accepted list
-  * Fix missing identity encoding when q=0 exists
-  * Remove dynamic building of Negotiator class
-
-0.4.9 / 2014-10-14
-==================
-
-  * Fix error when media type has invalid parameter
-
-0.4.8 / 2014-09-28
-==================
-
-  * Fix all negotiations to be case-insensitive
-  * Stable sort preferences of same quality according to client order
+  * Support "fake" stats objects
   * Support Node.js 0.6
 
-0.4.7 / 2014-06-24
+1.3.1 / 2014-09-14
 ==================
 
-  * Handle invalid provided languages
-  * Handle invalid provided media types
+  * Use the (new and improved) `crc` for crc32
 
-0.4.6 / 2014-06-11
+1.3.0 / 2014-08-29
 ==================
 
-  *  Order by specificity when quality is the same
+  * Default strings to strong ETags
+  * Improve speed for weak ETags over 1KB
 
-0.4.5 / 2014-05-29
+1.2.1 / 2014-08-29
 ==================
 
-  * Fix regression in empty header handling
+  * Use the (much faster) `buffer-crc32` for crc32
 
-0.4.4 / 2014-05-29
+1.2.0 / 2014-08-24
 ==================
 
-  * Fix behaviors when headers are not present
+  * Add support for file stat objects
 
-0.4.3 / 2014-04-16
+1.1.0 / 2014-08-24
 ==================
 
-  * Handle slashes on media params correctly
+  * Add fast-path for empty entity
+  * Add weak ETag generation
+  * Shrink size of generated ETags
 
-0.4.2 / 2014-02-28
+1.0.1 / 2014-08-24
 ==================
 
-  * Fix media type sorting
-  * Handle media types params strictly
+  * Fix behavior of string containing Unicode
 
-0.4.1 / 2014-01-16
+1.0.0 / 2014-05-18
 ==================
 
-  * Use most specific matches
-
-0.4.0 / 2014-01-09
-==================
-
-  * Remove preferred prefix from methods
+  * Initial release
