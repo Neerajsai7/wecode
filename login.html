@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Say Hi! - Random Conversation Starter</title>
+
+<style>
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-container {
+    height: 100vh;
+    background: url('back1.jpeg') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.top-btn {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: transparent;
+    border: 2px solid #E6B37E;
+    color: #E6B37E;
+    padding: 6px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 5;
+}
+
+.logo-wrapper { margin-bottom: 40px; z-index: 2; }
+
+.logo-circle {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 4px solid #E6B37E;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 25px rgba(230, 179, 126, 0.5);
+    overflow: hidden;
+}
+
+#display-img { width: 100%; height: 100%; object-fit: cover; }
+
+.menu-container { display: flex; flex-direction: column; gap: 18px; z-index: 2; }
+
+.nav-item {
+    width: 300px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid #E6B37E;
+    color: white;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.3s ease;
+}
+
+.nav-item:hover {
+    background: rgba(230, 179, 126, 0.3);
+    transform: scale(1.03);
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    z-index: 10;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-box {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #E6B37E;
+    border-radius: 25px;
+    padding: 40px;
+    width: 340px;
+    text-align: center;
+    position: relative;
+    color: white;
+}
+
+.modal-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: 1px solid #E6B37E;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.submit-btn {
+    background: #E6B37E;
+    color: #333;
+    border: none;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.switch-text {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #ddd;
+    cursor: pointer;
+}
+
+.social-group {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.social-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid #E6B37E;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    cursor: pointer;
+    color: #E6B37E;
+    font-size: 24px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="main-container">
+
+<button class="top-btn" onclick="openModal()">LOGIN</button>
+
+<div class="logo-wrapper">
+    <div class="logo-circle">
+        <img src="logo.jpeg" id="display-img">
+    </div>
+</div>
+
+<div class="menu-container">
+    <button class="nav-item" onclick="openModal()">🎙️ VOICE CHAT</button>
+    <button class="nav-item" onclick="openModal()">💬 TEXT</button>
+    <button class="nav-item" onclick="openModal()">📹 VIDEO CHAT</button>
+</div>
+
+<div id="authModal" class="modal-overlay">
+    <div class="modal-box">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+
+        <h2 id="formTitle">Login</h2>
+
+        <input type="text" id="username" placeholder="Username">
+        <input type="email" id="email" placeholder="Email" style="display:none;">
+        <input type="password" id="password" placeholder="Password">
+
+        <button class="submit-btn" onclick="handleAuth()">ENTER</button>
+
+        <div class="switch-text" onclick="toggleMode()" id="switchText">
+            Don't have an account? Sign Up
+        </div>
+
+        <div class="social-group">
+            <div class="social-btn"
+                onclick="window.location.href='http://localhost:5000/api/auth/google'">
+                <img src="https://img.icons8.com/color/24/google-logo.png">
+            </div>
+
+            <div class="social-btn"
+                onclick="window.location.href='http://localhost:5000/api/auth/facebook'">
+                <img src="https://img.icons8.com/color/24/facebook-new.png">
+            </div>
+
+            <div class="social-btn"
+                onclick="window.location.href='http://localhost:5000/api/auth/twitter'">
+                <img src="https://img.icons8.com/ios-filled/24/ffffff/x.png">
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</div>
+
+<script>
+
+let mode = "login";
+
+// Capture token from OAuth redirect
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+if (token) {
+    localStorage.setItem("token", token);
+    window.history.replaceState({}, document.title, window.location.pathname);
+    window.location.href = "directory.html";
+}
+
+function openModal() {
+    document.getElementById("authModal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("authModal").style.display = "none";
+}
+
+function toggleMode() {
+    const emailField = document.getElementById("email");
+    const title = document.getElementById("formTitle");
+    const switchText = document.getElementById("switchText");
+
+    if (mode === "login") {
+        mode = "signup";
+        emailField.style.display = "block";
+        title.innerText = "Sign Up";
+        switchText.innerText = "Already have an account? Login";
+    } else {
+        mode = "login";
+        emailField.style.display = "none";
+        title.innerText = "Login";
+        switchText.innerText = "Don't have an account? Sign Up";
+    }
+}
+
+async function handleAuth() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value;
+
+    if (!username || !password) {
+        alert("Please fill all required fields");
+        return;
+    }
+
+    const url = mode === "signup"
+        ? "http://localhost:5000/api/auth/signup"
+        : "http://localhost:5000/api/auth/login";
+
+    const body = mode === "signup"
+        ? { username, email, password }
+        : { username, password };
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+            }
+            window.location.href = "directory.html";
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        alert("Server error. Make sure backend is running.");
+    }
+}
+
+</script>
+
+</body>
+</html>
+

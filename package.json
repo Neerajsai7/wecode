@@ -1,42 +1,27 @@
 {
-  "name": "object-assign",
-  "version": "4.1.1",
-  "description": "ES2015 `Object.assign()` ponyfill",
-  "license": "MIT",
-  "repository": "sindresorhus/object-assign",
-  "author": {
-    "name": "Sindre Sorhus",
-    "email": "sindresorhus@gmail.com",
-    "url": "sindresorhus.com"
-  },
-  "engines": {
-    "node": ">=0.10.0"
-  },
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
   "scripts": {
-    "test": "xo && ava",
-    "bench": "matcha bench.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
-  "files": [
-    "index.js"
-  ],
-  "keywords": [
-    "object",
-    "assign",
-    "extend",
-    "properties",
-    "es2015",
-    "ecmascript",
-    "harmony",
-    "ponyfill",
-    "prollyfill",
-    "polyfill",
-    "shim",
-    "browser"
-  ],
-  "devDependencies": {
-    "ava": "^0.16.0",
-    "lodash": "^4.16.4",
-    "matcha": "^0.7.0",
-    "xo": "^0.16.0"
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.1",
+    "passport": "^0.7.0",
+    "passport-facebook": "^3.0.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-twitter": "^1.0.4",
+    "socket.io": "^4.8.3"
   }
 }

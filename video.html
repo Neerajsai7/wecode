@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Say Hi! - AI Stranger Video</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body,html{
+margin:0;padding:0;height:100%;overflow:hidden;
+font-family:'Poppins',sans-serif;color:white;background:#000;
+}
+
+.call-container{
+height:100vh;
+background:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)),
+url('back1.jpeg') no-repeat center center;
+background-size:cover;
+display:flex;flex-direction:column;align-items:center;
+position:relative;
+}
+
+#remote-video{
+position:absolute;top:0;left:0;width:100%;height:100%;
+object-fit:cover;z-index:1;
+}
+
+#local-video{
+position:absolute;bottom:120px;right:20px;
+width:200px;height:140px;object-fit:cover;
+border:2px solid #E6B37E;border-radius:15px;
+z-index:10;box-shadow:0 8px 20px rgba(0,0,0,0.5);
+}
+
+.ui-layer{
+position:relative;z-index:20;width:100%;height:100%;
+display:flex;flex-direction:column;align-items:center;
+}
+
+.call-header{
+width:100%;padding:20px 30px;
+display:flex;justify-content:flex-end;
+}
+
+.timer-box{
+font-size:22px;font-weight:bold;color:#E6B37E;
+border:2px solid #E6B37E;padding:5px 18px;
+border-radius:30px;background:rgba(0,0,0,0.6);
+margin-right:15px;
+}
+
+.topic-card{
+width:85%;max-width:550px;
+background:rgba(0,0,0,0.5);
+border:2px solid #E6B37E;border-radius:20px;
+padding:15px;text-align:center;
+backdrop-filter:blur(10px);
+margin-top:10px;
+}
+
+.topic-text{
+font-size:15px;font-style:italic;
+}
+
+.profile-section{
+flex:1;display:flex;flex-direction:column;
+justify-content:center;align-items:center;
+}
+
+.avatar-circle{
+width:130px;height:130px;border-radius:50%;
+border:3px solid #E6B37E;
+display:flex;justify-content:center;align-items:center;
+background:rgba(255,255,255,0.1);
+transition:0.4s;
+}
+
+.pulse{
+animation:pulse 2s infinite;
+}
+@keyframes pulse{
+0%{box-shadow:0 0 0 0 rgba(230,179,126,0.7)}
+70%{box-shadow:0 0 0 25px rgba(230,179,126,0)}
+100%{box-shadow:0 0 0 0 rgba(230,179,126,0)}
+}
+
+.status-text{
+margin-top:10px;font-size:14px;
+color:#E6B37E;text-transform:uppercase;
+letter-spacing:2px;
+}
+
+.random-btn{
+position:absolute;right:25px;top:50%;
+transform:translateY(-50%);
+width:80px;height:80px;border-radius:50%;
+background:#E6B37E;border:none;
+display:flex;flex-direction:column;
+align-items:center;justify-content:center;
+font-size:10px;font-weight:bold;
+cursor:pointer;color:#222;
+box-shadow:0 0 20px rgba(230,179,126,0.6);
+}
+
+.controls{
+padding-bottom:40px;
+display:flex;gap:20px;
+}
+
+.control-btn{
+width:60px;height:60px;border-radius:50%;
+background:rgba(0,0,0,0.6);
+border:2px solid rgba(255,255,255,0.6);
+display:flex;justify-content:center;align-items:center;
+cursor:pointer;
+}
+
+.control-btn img{
+width:26px;filter:invert(1);
+}
+
+.btn-off{
+background:#ff4757 !important;
+border-color:#ff4757 !important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="call-container">
+
+<video id="remote-video" autoplay muted loop></video>
+<video id="local-video" autoplay muted playsinline></video>
+
+<div class="ui-layer">
+
+<header class="call-header">
+<div id="timer" class="timer-box">05:00</div>
+<button onclick="location.href='directory.html'"
+style="background:transparent;border:1px solid #E6B37E;
+color:#E6B37E;padding:8px 18px;border-radius:20px;cursor:pointer;">
+EXIT
+</button>
+</header>
+
+<button class="random-btn" onclick="connectAI()">
+🔀<br>RANDOM
+</button>
+
+<div class="topic-card">
+<div id="active-topic" class="topic-text">
+Click RANDOM to connect with AI Stranger
+</div>
+</div>
+
+<div class="profile-section">
+<div id="avatar" class="avatar-circle">
+<img src="https://img.icons8.com/ios-filled/100/ffffff/user-male-circle.png"
+style="width:70px;filter:invert(1);opacity:0.4;">
+</div>
+<div id="status" class="status-text">Disconnected</div>
+</div>
+
+<div class="controls">
+<button id="mic-btn" class="control-btn" onclick="toggleMic()">
+<img id="mic-icon"
+src="https://img.icons8.com/ios-filled/50/ffffff/microphone.png">
+</button>
+
+<button id="cam-btn" class="control-btn" onclick="toggleCam()">
+<img id="cam-icon"
+src="https://img.icons8.com/ios-filled/50/ffffff/video-call.png">
+</button>
+
+<button class="control-btn btn-off" onclick="location.reload()">
+<img src="https://img.icons8.com/ios-filled/50/ffffff/end-call.png">
+</button>
+</div>
+
+</div>
+</div>
+
+<script>
+
+/* =============================
+   AI STRANGER VIDEO POOL
+============================= */
+
+const aiVideos=[
+"https://www.w3schools.com/html/mov_bbb.mp4",
+"https://www.w3schools.com/html/movie.mp4",
+"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+];
+
+/* =============================
+   30 EMOTIONAL TOPICS
+============================= */
+
+const topics=[
+"If today had a color, what would it be and why?",
+"What emotion are you feeling most lately?",
+"What memory shaped you most?",
+"When did you last feel truly happy?",
+"What does love mean to you?",
+"What makes you feel safe?",
+"What scares you about the future?",
+"What makes someone trustworthy?",
+"When do you feel strongest?",
+"What drains your energy?",
+"What gives your life meaning?",
+"What motivates you daily?",
+"What is your hidden strength?",
+"What makes you different?",
+"When do you feel lonely?",
+"What dream do you fear?",
+"What makes you proud?",
+"What lesson changed your mindset?",
+"What gives you peace instantly?",
+"When did you last cry?",
+"What makes you feel understood?",
+"What is something you forgive yourself for?",
+"What gives you confidence?",
+"What makes you smile randomly?",
+"What habit comforts you?",
+"What makes you feel alive?",
+"When do you doubt yourself?",
+"What does happiness look like?",
+"What emotion do you avoid?",
+"What moment defines you?"
+];
+
+/* =============================
+   CONNECT AI STRANGER
+============================= */
+
+function connectAI(){
+
+const avatar=document.getElementById("avatar");
+const status=document.getElementById("status");
+
+avatar.classList.add("pulse");
+status.innerText="Searching AI Stranger...";
+
+setTimeout(()=>{
+
+const randomVideo=
+aiVideos[Math.floor(Math.random()*aiVideos.length)];
+
+const remote=document.getElementById("remote-video");
+remote.src=randomVideo;
+remote.play();
+
+avatar.classList.remove("pulse");
+status.innerText="Connected to AI Stranger";
+
+changeTopic();
+startTimer();
+
+},2500);
+}
+
+/* =============================
+   CAMERA & MIC
+============================= */
+
+let localStream;
+let micOff=false;
+let camOff=false;
+
+async function initCam(){
+localStream=await navigator.mediaDevices.getUserMedia({
+video:true,audio:true
+});
+document.getElementById("local-video").srcObject=localStream;
+}
+initCam();
+
+function toggleMic(){
+micOff=!micOff;
+localStream.getAudioTracks()[0].enabled=!micOff;
+document.getElementById("mic-btn")
+.classList.toggle("btn-off",micOff);
+}
+
+function toggleCam(){
+camOff=!camOff;
+localStream.getVideoTracks()[0].enabled=!camOff;
+document.getElementById("cam-btn")
+.classList.toggle("btn-off",camOff);
+}
+
+/* =============================
+   TIMER
+============================= */
+
+let time=300;
+let interval;
+
+function startTimer(){
+clearInterval(interval);
+time=300;
+interval=setInterval(()=>{
+if(time>0){
+time--;
+let m=Math.floor(time/60);
+let s=time%60;
+document.getElementById("timer").innerText=
+`${m<10?"0":""}${m}:${s<10?"0":""}${s}`;
+}
+},1000);
+}
+
+/* =============================
+   TOPIC CHANGE
+============================= */
+
+function changeTopic(){
+document.getElementById("active-topic").innerText=
+topics[Math.floor(Math.random()*topics.length)];
+}
+
+</script>
+
+</body>
+</html>

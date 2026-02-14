@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Say Hi! - AI Topic Chat</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            color: white;
+        }
+
+        .chat-container {
+            height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('back1.jpeg') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Glassmorphism Header */
+        .chat-header {
+            width: 100%;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #E6B37E;
+            z-index: 10;
+        }
+
+        .room-info { display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 10px; height: 10px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 10px #00ff00; }
+
+        /* AI Topic Display */
+        .topic-area {
+            width: 90%;
+            max-width: 550px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #E6B37E;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 15px rgba(230, 179, 126, 0.3);
+        }
+
+        .topic-label { font-size: 11px; color: #E6B37E; letter-spacing: 2px; margin-bottom: 8px; }
+        .topic-content { font-size: 16px; font-weight: 500; font-style: italic; }
+
+        /* Message Box */
+        .messages-box {
+            flex: 1;
+            width: 100%;
+            max-width: 700px;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 80%; transition: all 0.3s ease; }
+        .partner { align-self: flex-start; }
+        .user { align-self: flex-end; }
+
+        .sender-name { font-size: 10px; color: #E6B37E; margin-bottom: 4px; padding: 0 5px; }
+        
+        .bubble {
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .partner .bubble { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.2); border-bottom-left-radius: 2px; }
+        .user .bubble { background: #E6B37E; color: #222; font-weight: 500; border-bottom-right-radius: 2px; }
+
+        .typing-indicator { font-size: 12px; color: #ccc; font-style: italic; margin-left: 10px; display: none; }
+
+        /* Input Bar */
+        .input-bar {
+            width: 100%;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            backdrop-filter: blur(15px);
+        }
+
+        .chat-input {
+            width: 75%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #E6B37E;
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
+            outline: none;
+        }
+
+        .action-btn { background: #E6B37E; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.95); }
+
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="room-info">
+                <div class="status-dot"></div>
+                <span>Connected with Stranger</span>
+                <span id="typing" class="typing-indicator">...is typing</span>
+            </div>
+            <button class="action-btn" style="background:transparent; border:1px solid #E6B37E; color:#E6B37E;" onclick="location.href='directory.html'">EXIT</button>
+        </header>
+
+        <div class="topic-area">
+            <div class="topic-label">📍 AI CONVERSATION PROMPT</div>
+            <div class="topic-content" id="active-topic">If today had a color, what would it be and why?</div>
+        </div>
+
+        <div class="messages-box" id="chat-box">
+            <div class="msg-wrapper partner">
+                <span class="sender-name">Partner</span>
+                <div class="bubble">Hi! That's an interesting topic. What color are you feeling today?</div>
+            </div>
+        </div>
+
+        <div class="input-bar">
+            <input type="text" id="msg-input" class="chat-input" placeholder="Type your response...">
+            <button class="action-btn" onclick="sendUserMsg()">SEND</button>
+        </div>
+    </div>
+
+    <script>
+
+/* =========================
+   30 DEEP EMOTIONAL TOPICS
+========================= */
+
+const topics = [
+"1. If today had a color, what would it be and why?",
+"2. What emotion do you think you hide the most from others?",
+"3. When was the last time you felt truly understood?",
+"4. What is something small that secretly means a lot to you?",
+"5. If your heart could speak, what would it say right now?",
+"6. What memory makes you smile instantly?",
+"7. Do you think people show their real selves online?",
+"8. What does happiness mean to you lately?",
+"9. When do you feel most alone?",
+"10. What is something you wish people noticed about you?",
+"11. Do you forgive easily?",
+"12. What fear silently shapes your decisions?",
+"13. What makes you feel safe?",
+"14. If you could relive one emotional moment, which one?",
+"15. What does love mean to you?",
+"16. When do you feel most confident?",
+"17. What’s a dream you’ve never told anyone?",
+"18. What emotion do you struggle expressing?",
+"19. What does comfort look like to you?",
+"20. If you could hug someone right now, who would it be?",
+"21. What’s something you regret not saying?",
+"22. What makes you feel valued?",
+"23. What memory still hurts a little?",
+"24. When do you feel most alive?",
+"25. What’s a lesson life taught you the hard way?",
+"26. What does trust mean to you?",
+"27. When was the last time you cried?",
+"28. What makes you feel emotionally strong?",
+"29. If your life was a season, which would it be?",
+"30. What’s something your younger self would thank you for?"
+];
+
+/* =========================
+   90 EMOTIONAL REPLIES
+   (3 per topic)
+========================= */
+
+const replies = {
+0: [
+"I love that question. Today feels like a soft blue for me — calm but slightly heavy.",
+"Maybe a warm orange… like hope trying to shine through something cloudy.",
+"It feels grey but peaceful — like quiet reflection."
+],
+1: [
+"I think I hide sadness behind humor sometimes.",
+"Probably insecurity. It’s easier to act confident.",
+"I hide disappointment the most."
+],
+2: [
+"Honestly, not very often. That’s why this feels nice.",
+"When someone listens without interrupting — that’s rare.",
+"It happened once, and I still remember that feeling."
+],
+3: [
+"A simple ‘are you okay?’ text means everything.",
+"When someone remembers small details about me.",
+"A random compliment stays with me for days."
+],
+4: [
+"It would probably whisper that it’s tired but hopeful.",
+"Maybe it would ask for patience.",
+"I think it would ask for understanding."
+],
+5: [
+"A childhood laugh with friends.",
+"A random road trip memory.",
+"That one sunset I watched alone."
+],
+6: [
+"Most people show highlights, not their depth.",
+"I think vulnerability is rare online.",
+"It depends on how safe they feel."
+],
+7: [
+"Happiness feels quieter now — more peaceful.",
+"It’s less excitement and more stability.",
+"It feels like balance."
+],
+8: [
+"In crowded rooms sometimes.",
+"When I overthink at night.",
+"When I feel misunderstood."
+],
+9: [
+"When I stay silent but care deeply.",
+"When I support others quietly.",
+"When I’m trying my best."
+],
+10: [
+"Not really, I struggle to forgive.",
+"I forgive but don’t forget.",
+"I try to forgive for my peace."
+],
+11: [
+"Fear of failure shapes me a lot.",
+"Fear of not being enough.",
+"Fear of losing people."
+],
+12: [
+"Honest conversations.",
+"Physical closeness.",
+"Consistency."
+],
+13: [
+"A moment of being appreciated.",
+"A moment I felt proud.",
+"A moment of love."
+],
+14: [
+"It’s become deeper and more patient.",
+"It feels less dramatic and more real.",
+"It feels like understanding."
+],
+15: [
+"When I achieve something small.",
+"When someone believes in me.",
+"When I take risks."
+],
+16: [
+"Starting something creative.",
+"Moving somewhere new.",
+"Taking a big chance."
+],
+17: [
+"Anger sometimes.",
+"Fear.",
+"Love actually."
+],
+18: [
+"A quiet evening.",
+"A long conversation.",
+"A familiar place."
+],
+19: [
+"Someone I miss.",
+"My younger self.",
+"A close friend."
+],
+20: [
+"Something important I held back.",
+"A truth I avoided.",
+"A feeling I suppressed."
+],
+21: [
+"When someone listens.",
+"When I’m appreciated.",
+"When I’m chosen."
+],
+22: [
+"A betrayal.",
+"A goodbye.",
+"A missed chance."
+],
+23: [
+"When I’m creating.",
+"When I’m deeply connected.",
+"When I’m inspired."
+],
+24: [
+"To trust myself more.",
+"To not ignore red flags.",
+"To speak up sooner."
+],
+25: [
+"Trust is consistency.",
+"Trust is vulnerability.",
+"Trust is safety."
+],
+26: [
+"Recently actually.",
+"Long ago but vividly.",
+"More than I admit."
+],
+27: [
+"Surviving difficult times.",
+"Learning to say no.",
+"Growing emotionally."
+],
+28: [
+"Autumn — reflective and calm.",
+"Spring — hopeful.",
+"Winter — quiet growth."
+],
+29: [
+"To keep going.",
+"To stay kind.",
+"To be brave."
+]
+};
+
+/* =========================
+   INITIALIZE
+========================= */
+
+let currentTopicIndex = Math.floor(Math.random() * topics.length);
+document.getElementById("active-topic").innerText = topics[currentTopicIndex];
+
+function sendUserMsg() {
+    const input = document.getElementById('msg-input');
+    const chatBox = document.getElementById('chat-box');
+
+    if (input.value.trim() === "") return;
+
+    // Add user message
+    const userWrapper = document.createElement('div');
+    userWrapper.className = 'msg-wrapper user';
+    userWrapper.innerHTML = `<span class="sender-name">You</span><div class="bubble">${input.value}</div>`;
+    chatBox.appendChild(userWrapper);
+
+    input.value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    showTypingIndicator();
+}
+
+function showTypingIndicator() {
+    const typing = document.getElementById('typing');
+    typing.style.display = "inline";
+
+    const delay = 1500 + Math.random() * 2000; // realistic typing delay
+
+    setTimeout(() => {
+        typing.style.display = "none";
+        addPartnerReply();
+    }, delay);
+}
+
+function addPartnerReply() {
+    const chatBox = document.getElementById('chat-box');
+    const topicReplies = replies[currentTopicIndex];
+    const randomReply = topicReplies[Math.floor(Math.random() * topicReplies.length)];
+
+    const partnerWrapper = document.createElement('div');
+    partnerWrapper.className = 'msg-wrapper partner';
+    partnerWrapper.innerHTML = `
+        <span class="sender-name">Partner</span>
+        <div class="bubble">${randomReply}</div>
+    `;
+
+    chatBox.appendChild(partnerWrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+document.getElementById('msg-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendUserMsg();
+});
+
+</script>
+
+</body>
+</html>

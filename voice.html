@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Emotional Voice AI Chat</title>
+
+<style>
+body{
+margin:0;
+background: linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)),
+url('back1.jpeg') no-repeat center center;
+background-size:cover;
+font-family:sans-serif;
+color:white;
+display:flex;
+flex-direction:column;
+height:100vh;
+}
+
+.header{
+padding:15px;
+text-align:center;
+font-weight:bold;
+color:#E6B37E;
+}
+
+#topic{
+text-align:center;
+padding:10px 20px;
+font-style:italic;
+}
+
+#messages{
+flex:1;
+overflow-y:auto;
+padding:20px;
+display:flex;
+flex-direction:column;
+gap:15px;
+}
+
+.voice-bubble{
+padding:10px 15px;
+border-radius:20px;
+display:flex;
+align-items:center;
+gap:10px;
+max-width:260px;
+backdrop-filter:blur(10px);
+}
+
+.me{
+align-self:flex-end;
+background:#E6B37E;
+color:black;
+}
+
+.other{
+align-self:flex-start;
+background:rgba(255,255,255,0.15);
+}
+
+.play-btn{
+width:35px;
+height:35px;
+border-radius:50%;
+background:black;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+cursor:pointer;
+}
+
+.wave{
+display:flex;
+gap:3px;
+height:20px;
+align-items:end;
+}
+
+.wave span{
+width:3px;
+background:white;
+animation:wave 1s infinite ease-in-out;
+}
+
+@keyframes wave{
+0%,100%{height:5px}
+50%{height:20px}
+}
+
+#controls{
+padding:15px;
+display:flex;
+justify-content:center;
+gap:20px;
+background:rgba(0,0,0,0.6);
+}
+
+button{
+padding:10px 20px;
+border-radius:20px;
+border:none;
+cursor:pointer;
+font-weight:bold;
+}
+
+.status{
+text-align:center;
+padding:8px;
+font-size:14px;
+color:#E6B37E;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🎙 Emotional Voice AI</div>
+<div id="topic"></div>
+<div class="status" id="status">Ready</div>
+
+<div id="messages"></div>
+
+<div id="controls">
+<button onclick="startRecording()">🎙 Start</button>
+<button onclick="stopRecording()">⏹ Stop</button>
+</div>
+
+<script>
+
+/* ===============================
+   30 EMOTIONAL TOPICS
+=============================== */
+
+const topics = [
+"What's a memory that still makes you emotional?",
+"When was the last time you felt truly understood?",
+"What does loneliness feel like to you?",
+"What color represents your mood today?",
+"What is something you wish people knew about you?",
+"When did you last cry and why?",
+"What is your biggest hidden fear?",
+"What moment changed your life?",
+"What does happiness mean to you?",
+"What is your comfort place?",
+"What does love mean to you?",
+"When do you feel most alive?",
+"What is your biggest regret?",
+"What is a childhood memory you miss?",
+"What makes you feel safe?",
+"What makes you feel anxious?",
+"What does friendship mean to you?",
+"When do you feel proud of yourself?",
+"What is your dream life?",
+"What scares you about the future?",
+"What makes you feel connected?",
+"What is something you forgive yourself for?",
+"What does trust mean to you?",
+"What motivates you daily?",
+"What drains your energy?",
+"What is your safe memory?",
+"What makes you feel valued?",
+"What do you struggle to express?",
+"What does vulnerability mean to you?",
+"What is your emotional strength?"
+];
+
+/* ===============================
+   6 REPLIES PER TOPIC (180 TOTAL)
+=============================== */
+
+const replies = {};
+
+topics.forEach(topic => {
+replies[topic] = [
+"I feel that deeply. Sometimes those emotions stay longer than we expect.",
+"That's something very powerful to reflect on. It says a lot about your heart.",
+"I think moments like that shape who we become inside.",
+"That sounds meaningful. Emotions tied to that can stay with us forever.",
+"It's beautiful that you can think about that so openly.",
+"That kind of feeling connects us all in some way."
+];
+});
+
+/* ===============================
+   INITIAL TOPIC
+=============================== */
+
+let currentTopic = topics[Math.floor(Math.random()*topics.length)];
+document.getElementById("topic").innerText = currentTopic;
+
+/* ===============================
+   RECORDING
+=============================== */
+
+let mediaRecorder;
+let audioChunks=[];
+let currentStream;
+
+async function startRecording(){
+document.getElementById("status").innerText="Recording...";
+
+currentStream = await navigator.mediaDevices.getUserMedia({audio:true});
+mediaRecorder = new MediaRecorder(currentStream);
+
+audioChunks=[];
+
+mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+
+mediaRecorder.onstop=()=>{
+
+const blob=new Blob(audioChunks,{type:'audio/webm'});
+const url=URL.createObjectURL(blob);
+
+addVoiceBubble(url,true);
+
+currentStream.getTracks().forEach(track=>track.stop());
+
+document.getElementById("status").innerText="Processing reply...";
+
+setTimeout(generateReplyVoice,1500);
+};
+
+mediaRecorder.start();
+}
+
+function stopRecording(){
+if(mediaRecorder) mediaRecorder.stop();
+}
+
+/* ===============================
+   ADD VOICE BUBBLE
+=============================== */
+
+function addVoiceBubble(audioSrc,isMe){
+
+const container=document.createElement("div");
+container.className="voice-bubble "+(isMe?"me":"other");
+
+container.innerHTML=`
+<div class="play-btn">▶</div>
+<div class="wave">
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+`;
+
+const audio=new Audio(audioSrc);
+const playBtn=container.querySelector(".play-btn");
+
+let playing=false;
+
+playBtn.onclick=()=>{
+if(!playing){
+audio.play();
+playBtn.innerText="⏸";
+playing=true;
+}else{
+audio.pause();
+playBtn.innerText="▶";
+playing=false;
+}
+audio.onended=()=>{
+playBtn.innerText="▶";
+playing=false;
+};
+};
+
+document.getElementById("messages").appendChild(container);
+document.getElementById("messages").scrollTop=
+document.getElementById("messages").scrollHeight;
+}
+
+/* ===============================
+   GENERATE AI VOICE REPLY
+=============================== */
+
+function generateReplyVoice(){
+
+const topicReplies = replies[currentTopic];
+const replyText = topicReplies[Math.floor(Math.random()*6)];
+
+const container = document.createElement("div");
+container.className="voice-bubble other";
+
+container.innerHTML=`
+<div class="play-btn">▶</div>
+<div class="wave">
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+`;
+
+const playBtn = container.querySelector(".play-btn");
+
+let speaking = false;
+
+playBtn.onclick = () => {
+
+if(!speaking){
+
+const utterance = new SpeechSynthesisUtterance(replyText);
+utterance.rate = 0.95;
+utterance.pitch = 1;
+
+speechSynthesis.cancel();
+speechSynthesis.speak(utterance);
+
+playBtn.innerText = "⏸";
+speaking = true;
+
+utterance.onend = () => {
+playBtn.innerText = "▶";
+speaking = false;
+};
+
+}else{
+speechSynthesis.cancel();
+playBtn.innerText = "▶";
+speaking = false;
+}
+
+};
+
+document.getElementById("messages").appendChild(container);
+document.getElementById("messages").scrollTop =
+document.getElementById("messages").scrollHeight;
+
+document.getElementById("status").innerText="AI voice message ready";
+}
+
+
+</script>
+
+</body>
+</html>
