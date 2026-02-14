@@ -1,271 +1,297 @@
-/*!
- * express
- * Copyright(c) 2009-2013 TJ Holowaychuk
- * Copyright(c) 2014-2015 Douglas Christopher Wilson
- * MIT Licensed
- */
-
 'use strict';
 
-/**
+/*!
  * Module dependencies.
- * @api private
  */
 
-var { METHODS } = require('node:http');
-var contentType = require('content-type');
-var etag = require('etag');
-var mime = require('mime-types')
-var proxyaddr = require('proxy-addr');
-var qs = require('qs');
-var querystring = require('node:querystring');
-const { Buffer } = require('node:buffer');
-
+const specialProperties = ['__proto__', 'constructor', 'prototype'];
 
 /**
- * A list of lowercased HTTP methods that are supported by Node.js.
- * @api private
- */
-exports.methods = METHODS.map((method) => method.toLowerCase());
-
-/**
- * Return strong ETag for `body`.
+ * Clones objects
  *
- * @param {String|Buffer} body
- * @param {String} [encoding]
- * @return {String}
+ * @param {Object} obj the object to clone
+ * @param {Object} options
+ * @return {Object} the cloned object
  * @api private
  */
 
-exports.etag = createETagGenerator({ weak: false })
+const clone = exports.clone = function clone(obj, options) {
+  if (obj === undefined || obj === null)
+    return obj;
 
-/**
- * Return weak ETag for `body`.
- *
- * @param {String|Buffer} body
- * @param {String} [encoding]
- * @return {String}
- * @api private
- */
+  if (Array.isArray(obj))
+    return exports.cloneArray(obj, options);
 
-exports.wetag = createETagGenerator({ weak: true })
+  if (obj.constructor) {
+    if (/ObjectI[dD]$/.test(obj.constructor.name)) {
+      return 'function' == typeof obj.clone
+        ? obj.clone()
+        : new obj.constructor(obj.id);
+    }
 
-/**
- * Normalize the given `type`, for example "html" becomes "text/html".
- *
- * @param {String} type
- * @return {Object}
- * @api private
- */
+    if (obj.constructor.name === 'ReadPreference') {
+      return new obj.constructor(obj.mode, clone(obj.tags, options));
+    }
 
-exports.normalizeType = function(type){
-  return ~type.indexOf('/')
-    ? acceptParams(type)
-    : { value: (mime.lookup(type) || 'application/octet-stream'), params: {} }
+    if ('Binary' == obj._bsontype && obj.buffer && obj.value) {
+      return 'function' == typeof obj.clone
+        ? obj.clone()
+        : new obj.constructor(obj.value(true), obj.sub_type);
+    }
+
+    if ('Date' === obj.constructor.name || 'Function' === obj.constructor.name)
+      return new obj.constructor(+obj);
+
+    if ('RegExp' === obj.constructor.name)
+      return new RegExp(obj);
+
+    if ('Buffer' === obj.constructor.name)
+      return Buffer.from(obj);
+  }
+
+  if (isObject(obj))
+    return exports.cloneObject(obj, options);
+
+  if (obj.valueOf)
+    return obj.valueOf();
 };
 
-/**
- * Normalize `types`, for example "html" becomes "text/html".
- *
- * @param {Array} types
- * @return {Array}
- * @api private
+/*!
+ * ignore
  */
 
-exports.normalizeTypes = function(types) {
-  return types.map(exports.normalizeType);
-};
+exports.cloneObject = function cloneObject(obj, options) {
+  const minimize = options && options.minimize,
+      ret = {},
+      keys = Object.keys(obj),
+      len = keys.length;
+  let hasKeys = false,
+      val,
+      k = '',
+      i = 0;
 
-
-/**
- * Parse accept params `str` returning an
- * object with `.value`, `.quality` and `.params`.
- *
- * @param {String} str
- * @return {Object}
- * @api private
- */
-
-function acceptParams (str) {
-  var length = str.length;
-  var colonIndex = str.indexOf(';');
-  var index = colonIndex === -1 ? length : colonIndex;
-  var ret = { value: str.slice(0, index).trim(), quality: 1, params: {} };
-
-  while (index < length) {
-    var splitIndex = str.indexOf('=', index);
-    if (splitIndex === -1) break;
-
-    var colonIndex = str.indexOf(';', index);
-    var endIndex = colonIndex === -1 ? length : colonIndex;
-
-    if (splitIndex > endIndex) {
-      index = str.lastIndexOf(';', splitIndex - 1) + 1;
+  for (i = 0; i < len; ++i) {
+    k = keys[i];
+    // Not technically prototype pollution because this wouldn't merge properties
+    // onto `Object.prototype`, but avoid properties like __proto__ as a precaution.
+    if (specialProperties.indexOf(k) !== -1) {
       continue;
     }
 
-    var key = str.slice(index, splitIndex).trim();
-    var value = str.slice(splitIndex + 1, endIndex).trim();
+    val = clone(obj[k], options);
 
-    if (key === 'q') {
-      ret.quality = parseFloat(value);
-    } else {
-      ret.params[key] = value;
+    if (!minimize || ('undefined' !== typeof val)) {
+      hasKeys || (hasKeys = true);
+      ret[k] = val;
     }
-
-    index = endIndex + 1;
   }
 
+  return minimize
+    ? hasKeys && ret
+    : ret;
+};
+
+exports.cloneArray = function cloneArray(arr, options) {
+  const ret = [],
+      l = arr.length;
+  let i = 0;
+  for (; i < l; i++)
+    ret.push(clone(arr[i], options));
   return ret;
-}
-
-/**
- * Compile "etag" value to function.
- *
- * @param  {Boolean|String|Function} val
- * @return {Function}
- * @api private
- */
-
-exports.compileETag = function(val) {
-  var fn;
-
-  if (typeof val === 'function') {
-    return val;
-  }
-
-  switch (val) {
-    case true:
-    case 'weak':
-      fn = exports.wetag;
-      break;
-    case false:
-      break;
-    case 'strong':
-      fn = exports.etag;
-      break;
-    default:
-      throw new TypeError('unknown value for etag function: ' + val);
-  }
-
-  return fn;
-}
-
-/**
- * Compile "query parser" value to function.
- *
- * @param  {String|Function} val
- * @return {Function}
- * @api private
- */
-
-exports.compileQueryParser = function compileQueryParser(val) {
-  var fn;
-
-  if (typeof val === 'function') {
-    return val;
-  }
-
-  switch (val) {
-    case true:
-    case 'simple':
-      fn = querystring.parse;
-      break;
-    case false:
-      break;
-    case 'extended':
-      fn = parseExtendedQueryString;
-      break;
-    default:
-      throw new TypeError('unknown value for query parser function: ' + val);
-  }
-
-  return fn;
-}
-
-/**
- * Compile "proxy trust" value to function.
- *
- * @param  {Boolean|String|Number|Array|Function} val
- * @return {Function}
- * @api private
- */
-
-exports.compileTrust = function(val) {
-  if (typeof val === 'function') return val;
-
-  if (val === true) {
-    // Support plain true/false
-    return function(){ return true };
-  }
-
-  if (typeof val === 'number') {
-    // Support trusting hop count
-    return function(a, i){ return i < val };
-  }
-
-  if (typeof val === 'string') {
-    // Support comma-separated values
-    val = val.split(',')
-      .map(function (v) { return v.trim() })
-  }
-
-  return proxyaddr.compile(val || []);
-}
-
-/**
- * Set the charset in a given Content-Type string.
- *
- * @param {String} type
- * @param {String} charset
- * @return {String}
- * @api private
- */
-
-exports.setCharset = function setCharset(type, charset) {
-  if (!type || !charset) {
-    return type;
-  }
-
-  // parse type
-  var parsed = contentType.parse(type);
-
-  // set charset
-  parsed.parameters.charset = charset;
-
-  // format type
-  return contentType.format(parsed);
 };
 
 /**
- * Create an ETag generator function, generating ETags with
- * the given options.
+ * Merges `from` into `to` without overwriting existing properties.
  *
- * @param {object} options
- * @return {function}
- * @private
+ * @param {Object} to
+ * @param {Object} from
+ * @api private
  */
 
-function createETagGenerator (options) {
-  return function generateETag (body, encoding) {
-    var buf = !Buffer.isBuffer(body)
-      ? Buffer.from(body, encoding)
-      : body
+exports.merge = function merge(to, from) {
+  const keys = Object.keys(from);
 
-    return etag(buf, options)
+  for (const key of keys) {
+    if (specialProperties.indexOf(key) !== -1) {
+      continue;
+    }
+    if ('undefined' === typeof to[key]) {
+      to[key] = from[key];
+    } else {
+      if (exports.isObject(from[key])) {
+        merge(to[key], from[key]);
+      } else {
+        to[key] = from[key];
+      }
+    }
   }
+};
+
+/**
+ * Same as merge but clones the assigned values.
+ *
+ * @param {Object} to
+ * @param {Object} from
+ * @api private
+ */
+
+exports.mergeClone = function mergeClone(to, from) {
+  const keys = Object.keys(from);
+
+  for (const key of keys) {
+    if (specialProperties.indexOf(key) !== -1) {
+      continue;
+    }
+    if ('undefined' === typeof to[key]) {
+      to[key] = clone(from[key]);
+    } else {
+      if (exports.isObject(from[key])) {
+        mergeClone(to[key], from[key]);
+      } else {
+        to[key] = clone(from[key]);
+      }
+    }
+  }
+};
+
+/**
+ * Read pref helper (mongo 2.2 drivers support this)
+ *
+ * Allows using aliases instead of full preference names:
+ *
+ *     p   primary
+ *     pp  primaryPreferred
+ *     s   secondary
+ *     sp  secondaryPreferred
+ *     n   nearest
+ *
+ * @param {String} pref
+ */
+
+exports.readPref = function readPref(pref) {
+  switch (pref) {
+    case 'p':
+      pref = 'primary';
+      break;
+    case 'pp':
+      pref = 'primaryPreferred';
+      break;
+    case 's':
+      pref = 'secondary';
+      break;
+    case 'sp':
+      pref = 'secondaryPreferred';
+      break;
+    case 'n':
+      pref = 'nearest';
+      break;
+  }
+
+  return pref;
+};
+
+
+/**
+ * Read Concern helper (mongo 3.2 drivers support this)
+ *
+ * Allows using string to specify read concern level:
+ *
+ *     local          3.2+
+ *     available      3.6+
+ *     majority       3.2+
+ *     linearizable   3.4+
+ *     snapshot       4.0+
+ *
+ * @param {String|Object} concern
+ */
+
+exports.readConcern = function readConcern(concern) {
+  if ('string' === typeof concern) {
+    switch (concern) {
+      case 'l':
+        concern = 'local';
+        break;
+      case 'a':
+        concern = 'available';
+        break;
+      case 'm':
+        concern = 'majority';
+        break;
+      case 'lz':
+        concern = 'linearizable';
+        break;
+      case 's':
+        concern = 'snapshot';
+        break;
+    }
+    concern = { level: concern };
+  }
+  return concern;
+};
+
+/**
+ * Object.prototype.toString.call helper
+ */
+
+const _toString = Object.prototype.toString;
+exports.toString = function(arg) {
+  return _toString.call(arg);
+};
+
+/**
+ * Determines if `arg` is an object.
+ *
+ * @param {Object|Array|String|Function|RegExp|any} arg
+ * @return {Boolean}
+ */
+
+const isObject = exports.isObject = function(arg) {
+  return '[object Object]' == exports.toString(arg);
+};
+
+/**
+ * Object.keys helper
+ */
+
+exports.keys = Object.keys;
+
+/**
+ * Basic Object.create polyfill.
+ * Only one argument is supported.
+ *
+ * Based on https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object/create
+ */
+
+exports.create = 'function' == typeof Object.create
+  ? Object.create
+  : create;
+
+function create(proto) {
+  if (arguments.length > 1) {
+    throw new Error('Adding properties is not supported');
+  }
+
+  function F() { }
+  F.prototype = proto;
+  return new F;
 }
 
 /**
- * Parse an extended query string with qs.
- *
- * @param {String} str
- * @return {Object}
- * @private
+ * inheritance
  */
 
-function parseExtendedQueryString(str) {
-  return qs.parse(str, {
-    allowPrototypes: true
-  });
-}
+exports.inherits = function(ctor, superCtor) {
+  ctor.prototype = exports.create(superCtor.prototype);
+  ctor.prototype.constructor = ctor;
+};
+
+/**
+ * Check if this object is an arguments object
+ *
+ * @param {Any} v
+ * @return {Boolean}
+ */
+
+exports.isArgumentsObject = function(v) {
+  return Object.prototype.toString.call(v) === '[object Arguments]';
+};
