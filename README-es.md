@@ -316,21 +316,21 @@ See [examples](https://github.com/dotenv-org/examples) of using dotenv with vari
 
 &nbsp;
 
-## Agents
+## Agentes
 
 <img src="https://dotenvx.com/assets/img/as2/9.jpg" height="400" alt="dotenvx-as2" align="right"/>
 
-> Software is changing, and dotenv must change with it—that is why I built [agentic secret storage (AS2)](https://dotenvx.com/as2). Agents run code without humans at terminals, so plaintext `.env` files are the wrong primitive.
+> El software está cambiando, y dotenv debe cambiar con él—por eso construí [agentic secret storage (AS2)](https://dotenvx.com/as2). Los agentes ejecutan código sin humanos en la terminal, por lo que los archivos `.env` en texto plano son el primitivo equivocado.
 >
-> AS2 is built for autonomous software: encrypted by default, zero console access, and cryptography‑first delivery that keeps operators out of the loop.
+> AS2 está diseñado para software autónomo: cifrado por defecto, cero acceso a consola y entrega priorizando la criptografía que mantiene a los operadores fuera del circuito.
 >
-> It is backed by [Vestauth](https://github.com/vestauth/vestauth), the trusted, pioneering auth layer for agents—giving each agent a cryptographic identity so requests are signed with private keys and verified with public keys. No shared secrets to leak.
+> Está respaldado por [Vestauth](https://github.com/vestauth/vestauth), la capa de autenticación pionera y de confianza para agentes—que otorga a cada agente una identidad criptográfica para firmar solicitudes con claves privadas y verificarlas con claves públicas. Sin secretos compartidos que se filtren.
 >
-> It's what I'm using now. - [motdotla](https://mot.la)
+> Es lo que uso ahora. - [motdotla](https://mot.la)
 
-### Quickstart
+### Inicio rápido
 
-Install vestauth and initialize your agent.
+Instala vestauth e inicializa tu agente.
 
 ```bash
 npm i -g vestauth
@@ -338,19 +338,19 @@ npm i -g vestauth
 vestauth agent init
 ```
 
-Your agent `set`s secrets with a simple `curl` endpoint:
+Tu agente puede `set` secretos con un endpoint `curl` simple:
 
 ```bash
 vestauth agent curl -X POST https://as2.dotenvx.com/set -d '{"KEY":"value"}'
 ```
 
-And your agent `get`s secrets with a simple `curl` endpoint:
+Y tu agente puede `get` secretos con un endpoint `curl` simple:
 
 ```bash
 vestauth agent curl https://as2.dotenvx.com/get?key=KEY
 ```
 
-That's it! This new primitive unlocks secrets access for agents without human-in-the-loop, oauth flows, or API keys. It's the future for agents.
+¡Eso es todo! Este nuevo primitivo habilita el acceso a secretos para agentes sin intervención humana, flujos de OAuth ni claves API. Es el futuro para los agentes.
 
 &nbsp;
 
