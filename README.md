@@ -1,169 +1,385 @@
-# http-errors
+# kareem
 
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][node-url]
-[![Node.js Version][node-image]][node-url]
-[![Build Status][ci-image]][ci-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+  [![Build Status](https://github.com/mongoosejs/kareem/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/mongoosejs/kareem/actions/workflows/test.yml)
+  <!--[![Coverage Status](https://img.shields.io/coveralls/vkarpov15/kareem.svg)](https://coveralls.io/r/vkarpov15/kareem)-->
 
-Create HTTP errors for Express, Koa, Connect, etc. with ease.
+Re-imagined take on the [hooks](http://npmjs.org/package/hooks) module, meant to offer additional flexibility in allowing you to execute hooks whenever necessary, as opposed to simply wrapping a single function.
 
-## Install
+Named for the NBA's 2nd all-time leading scorer Kareem Abdul-Jabbar, known for his mastery of the [hook shot](http://en.wikipedia.org/wiki/Kareem_Abdul-Jabbar#Skyhook)
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+<img src="http://upload.wikimedia.org/wikipedia/commons/0/00/Kareem-Abdul-Jabbar_Lipofsky.jpg" width="220">
 
-```console
-$ npm install http-errors
+<!--DOCS START-->
+
+# API
+
+## pre hooks
+
+Much like [hooks](https://npmjs.org/package/hooks), kareem lets you define
+pre and post hooks: pre hooks are called before a given function executes.
+Unlike hooks, kareem stores hooks and other internal state in a separate
+object, rather than relying on inheritance. Furthermore, kareem exposes
+an `execPre()` function that allows you to execute your pre hooks when
+appropriate, giving you more fine-grained control over your function hooks.
+
+### It runs without any hooks specified
+
+```javascript
+await hooks.execPre('cook', null);
 ```
 
-## Example
+### It runs basic serial pre hooks
 
-```js
-var createError = require('http-errors')
-var express = require('express')
-var app = express()
+pre hook functions can return a promise that resolves when finished.
 
-app.use(function (req, res, next) {
-  if (!req.user) return next(createError(401, 'Please login to view this page.'))
-  next()
-})
+```javascript
+let count = 0;
+
+hooks.pre('cook', function() {
+  ++count;
+  return Promise.resolve();
+});
+
+await hooks.execPre('cook', null);
+assert.equal(1, count);
 ```
 
-## API
+### It can run multiple pre hooks
 
-This is the current API, currently extracted from Koa and subject to change.
+```javascript
+let count1 = 0;
+let count2 = 0;
 
-### Error Properties
+hooks.pre('cook', function() {
+  ++count1;
+  return Promise.resolve();
+});
 
-- `expose` - can be used to signal if `message` should be sent to the client,
-  defaulting to `false` when `status` >= 500
-- `headers` - can be an object of header names to values to be sent to the
-  client, defaulting to `undefined`. When defined, the key names should all
-  be lower-cased
-- `message` - the traditional error message, which should be kept short and all
-  single line
-- `status` - the status code of the error, mirroring `statusCode` for general
-  compatibility
-- `statusCode` - the status code of the error, defaulting to `500`
+hooks.pre('cook', function() {
+  ++count2;
+  return Promise.resolve();
+});
 
-### createError([status], [message], [properties])
-
-Create a new error object with the given message `msg`.
-The error object inherits from `createError.HttpError`.
-
-```js
-var err = createError(404, 'This video does not exist!')
+await hooks.execPre('cook', null);
+assert.equal(1, count1);
+assert.equal(1, count2);
 ```
 
-- `status: 500` - the status code as a number
-- `message` - the message of the error, defaulting to node's text for that status code.
-- `properties` - custom properties to attach to the object
+### It can run fully synchronous pre hooks
 
-### createError([status], [error], [properties])
+If your pre hook function takes no parameters, its assumed to be
+fully synchronous.
 
-Extend the given `error` object with `createError.HttpError`
-properties. This will not alter the inheritance of the given
-`error` object, and the modified `error` object is the
-return value.
+```javascript
+let count1 = 0;
+let count2 = 0;
 
-<!-- eslint-disable no-redeclare -->
+hooks.pre('cook', function() {
+  ++count1;
+});
 
-```js
-fs.readFile('foo.txt', function (err, buf) {
-  if (err) {
-    if (err.code === 'ENOENT') {
-      var httpError = createError(404, err, { expose: false })
-    } else {
-      var httpError = createError(500, err)
-    }
-  }
-})
+hooks.pre('cook', function() {
+  ++count2;
+});
+
+await hooks.execPre('cook', null);
+assert.equal(1, count1);
+assert.equal(1, count2);
 ```
 
-- `status` - the status code as a number
-- `error` - the error object to extend
-- `properties` - custom properties to attach to the object
+### It properly attaches context to pre hooks
 
-### createError.isHttpError(val)
+Pre save hook functions are bound to the second parameter to `execPre()`
 
-Determine if the provided `val` is an `HttpError`. This will return `true`
-if the error inherits from the `HttpError` constructor of this module or
-matches the "duck type" for an error this module creates. All outputs from
-the `createError` factory will return `true` for this function, including
-if an non-`HttpError` was passed into the factory.
+```javascript
+hooks.pre('cook', function() {
+  this.bacon = 3;
+});
 
-### new createError\[code || name\](\[msg]\))
+hooks.pre('cook', function() {
+  this.eggs = 4;
+});
 
-Create a new error object with the given message `msg`.
-The error object inherits from `createError.HttpError`.
+const obj = { bacon: 0, eggs: 0 };
 
-```js
-var err = new createError.NotFound()
+// In the pre hooks, `this` will refer to `obj`
+await hooks.execPre('cook', obj);
+assert.equal(3, obj.bacon);
+assert.equal(4, obj.eggs);
 ```
 
-- `code` - the status code as a number
-- `name` - the name of the error as a "bumpy case", i.e. `NotFound` or `InternalServerError`.
+### It supports returning a promise
 
-#### List of all constructors
+You can also return a promise from your pre hooks instead of calling
+`next()`. When the returned promise resolves, kareem will kick off the
+next middleware.
 
-|Status Code|Constructor Name             |
-|-----------|-----------------------------|
-|400        |BadRequest                   |
-|401        |Unauthorized                 |
-|402        |PaymentRequired              |
-|403        |Forbidden                    |
-|404        |NotFound                     |
-|405        |MethodNotAllowed             |
-|406        |NotAcceptable                |
-|407        |ProxyAuthenticationRequired  |
-|408        |RequestTimeout               |
-|409        |Conflict                     |
-|410        |Gone                         |
-|411        |LengthRequired               |
-|412        |PreconditionFailed           |
-|413        |PayloadTooLarge              |
-|414        |URITooLong                   |
-|415        |UnsupportedMediaType         |
-|416        |RangeNotSatisfiable          |
-|417        |ExpectationFailed            |
-|418        |ImATeapot                    |
-|421        |MisdirectedRequest           |
-|422        |UnprocessableEntity          |
-|423        |Locked                       |
-|424        |FailedDependency             |
-|425        |TooEarly                     |
-|426        |UpgradeRequired              |
-|428        |PreconditionRequired         |
-|429        |TooManyRequests              |
-|431        |RequestHeaderFieldsTooLarge  |
-|451        |UnavailableForLegalReasons   |
-|500        |InternalServerError          |
-|501        |NotImplemented               |
-|502        |BadGateway                   |
-|503        |ServiceUnavailable           |
-|504        |GatewayTimeout               |
-|505        |HTTPVersionNotSupported      |
-|506        |VariantAlsoNegotiates        |
-|507        |InsufficientStorage          |
-|508        |LoopDetected                 |
-|509        |BandwidthLimitExceeded       |
-|510        |NotExtended                  |
-|511        |NetworkAuthenticationRequired|
+```javascript
+hooks.pre('cook', function() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      this.bacon = 3;
+      resolve();
+    }, 100);
+  });
+});
 
-## License
+const obj = { bacon: 0 };
 
-[MIT](LICENSE)
+await hooks.execPre('cook', obj);
+assert.equal(3, obj.bacon);
+```
 
-[ci-image]: https://badgen.net/github/checks/jshttp/http-errors/master?label=ci
-[ci-url]: https://github.com/jshttp/http-errors/actions?query=workflow%3Aci
-[coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/http-errors/master
-[coveralls-url]: https://coveralls.io/r/jshttp/http-errors?branch=master
-[node-image]: https://badgen.net/npm/node/http-errors
-[node-url]: https://nodejs.org/en/download
-[npm-downloads-image]: https://badgen.net/npm/dm/http-errors
-[npm-url]: https://npmjs.org/package/http-errors
-[npm-version-image]: https://badgen.net/npm/v/http-errors
-[travis-image]: https://badgen.net/travis/jshttp/http-errors/master
-[travis-url]: https://travis-ci.org/jshttp/http-errors
+### It supports filtering which hooks to run
+
+You can pass a `filter` option to `execPre()` to select which hooks
+to run. The filter function receives each hook object and should return
+`true` to run the hook or `false` to skip it.
+
+```javascript
+const execed = [];
+
+const fn1 = function() { execed.push('first'); };
+fn1.skipMe = true;
+hooks.pre('cook', fn1);
+
+const fn2 = function() { execed.push('second'); };
+hooks.pre('cook', fn2);
+
+// Only runs fn2, skips fn1 because fn1.skipMe is true
+await hooks.execPre('cook', null, [], {
+  filter: hook => !hook.fn.skipMe
+});
+
+assert.deepStrictEqual(execed, ['second']);
+```
+
+## post hooks
+
+### It runs without any hooks specified
+
+```javascript
+const [eggs] = await hooks.execPost('cook', null, [1]);
+assert.equal(eggs, 1);
+```
+
+### It executes with parameters passed in
+
+```javascript
+hooks.post('cook', function(eggs, bacon, callback) {
+  assert.equal(eggs, 1);
+  assert.equal(bacon, 2);
+  callback();
+});
+
+const [eggs, bacon] = await hooks.execPost('cook', null, [1, 2]);
+assert.equal(eggs, 1);
+assert.equal(bacon, 2);
+```
+
+### It can use synchronous post hooks
+
+```javascript
+const execed = {};
+
+hooks.post('cook', function(eggs, bacon) {
+  execed.first = true;
+  assert.equal(eggs, 1);
+  assert.equal(bacon, 2);
+});
+
+hooks.post('cook', function(eggs, bacon, callback) {
+  execed.second = true;
+  assert.equal(eggs, 1);
+  assert.equal(bacon, 2);
+  callback();
+});
+
+const [eggs, bacon] = await hooks.execPost('cook', null, [1, 2]);
+assert.equal(Object.keys(execed).length, 2);
+assert.ok(execed.first);
+assert.ok(execed.second);
+assert.equal(eggs, 1);
+assert.equal(bacon, 2);
+```
+
+### It supports returning a promise
+
+You can also return a promise from your post hooks instead of calling
+`next()`. When the returned promise resolves, kareem will kick off the
+next middleware.
+
+```javascript
+hooks.post('cook', function() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      this.bacon = 3;
+      resolve();
+    }, 100);
+  });
+});
+
+const obj = { bacon: 0 };
+
+await hooks.execPost('cook', obj, [obj]);
+assert.equal(obj.bacon, 3);
+```
+
+### It supports filtering which hooks to run
+
+You can pass a `filter` option to `execPost()` to select which hooks
+to run. The filter function receives each hook object and should return
+`true` to run the hook or `false` to skip it.
+
+```javascript
+const execed = [];
+
+const fn1 = function() { execed.push('first'); };
+fn1.skipMe = true;
+hooks.post('cook', fn1);
+
+const fn2 = function() { execed.push('second'); };
+hooks.post('cook', fn2);
+
+// Only runs fn2, skips fn1 because fn1.skipMe is true
+await hooks.execPost('cook', null, [], {
+  filter: hook => !hook.fn.skipMe
+});
+
+assert.deepStrictEqual(execed, ['second']);
+```
+
+## wrap()
+
+### It wraps pre and post calls into one call
+
+```javascript
+hooks.pre('cook', function() {
+  return new Promise(resolve => {
+    this.bacon = 3;
+    setTimeout(() => {
+      resolve();
+    }, 5);
+  });
+});
+
+hooks.pre('cook', function() {
+  this.eggs = 4;
+  return Promise.resolve();
+});
+
+hooks.pre('cook', function() {
+  this.waffles = false;
+  return Promise.resolve();
+});
+
+hooks.post('cook', function(obj) {
+  obj.tofu = 'no';
+});
+
+const obj = { bacon: 0, eggs: 0 };
+
+const args = [obj];
+
+const result = await hooks.wrap(
+  'cook',
+  function(o) {
+    assert.equal(obj.bacon, 3);
+    assert.equal(obj.eggs, 4);
+    assert.equal(obj.waffles, false);
+    assert.equal(obj.tofu, undefined);
+    return o;
+  },
+  obj,
+  args);
+
+assert.equal(obj.bacon, 3);
+assert.equal(obj.eggs, 4);
+assert.equal(obj.waffles, false);
+assert.equal(obj.tofu, 'no');
+assert.equal(result, obj);
+```
+
+## createWrapper()
+
+### It wraps wrap() into a callable function
+
+```javascript
+hooks.pre('cook', function() {
+  this.bacon = 3;
+  return Promise.resolve();
+});
+
+hooks.pre('cook', function() {
+  return new Promise(resolve => {
+    this.eggs = 4;
+    setTimeout(function() {
+      resolve();
+    }, 10);
+  });
+});
+
+hooks.pre('cook', function() {
+  this.waffles = false;
+  return Promise.resolve();
+});
+
+hooks.post('cook', function(obj) {
+  obj.tofu = 'no';
+});
+
+const obj = { bacon: 0, eggs: 0 };
+
+const cook = hooks.createWrapper(
+  'cook',
+  function(o) {
+    assert.equal(3, obj.bacon);
+    assert.equal(4, obj.eggs);
+    assert.equal(false, obj.waffles);
+    assert.equal(undefined, obj.tofu);
+    return o;
+  },
+  obj);
+
+const result = await cook(obj);
+assert.equal(obj.bacon, 3);
+assert.equal(obj.eggs, 4);
+assert.equal(obj.waffles, false);
+assert.equal(obj.tofu, 'no');
+
+assert.equal(result, obj);
+```
+
+## clone()
+
+### It clones a Kareem object
+
+```javascript
+const k1 = new Kareem();
+k1.pre('cook', function() {});
+k1.post('cook', function() {});
+
+const k2 = k1.clone();
+assert.deepEqual(Array.from(k2._pres.keys()), ['cook']);
+assert.deepEqual(Array.from(k2._posts.keys()), ['cook']);
+```
+
+## merge()
+
+### It pulls hooks from another Kareem object
+
+```javascript
+const k1 = new Kareem();
+const test1 = function() {};
+k1.pre('cook', test1);
+k1.post('cook', function() {});
+
+const k2 = new Kareem();
+const test2 = function() {};
+k2.pre('cook', test2);
+const k3 = k2.merge(k1);
+assert.equal(k3._pres.get('cook').length, 2);
+assert.equal(k3._pres.get('cook')[0].fn, test2);
+assert.equal(k3._pres.get('cook')[1].fn, test1);
+assert.equal(k3._posts.get('cook').length, 1);
+```
