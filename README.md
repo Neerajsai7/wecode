@@ -1,774 +1,603 @@
-# dotenv [![NPM version](https://img.shields.io/npm/v/dotenv.svg?style=flat-square)](https://www.npmjs.com/package/dotenv) [![downloads](https://img.shields.io/npm/dw/dotenv)](https://www.npmjs.com/package/dotenv)
 
-<img src="https://raw.githubusercontent.com/motdotla/dotenv/master/dotenv.svg" alt="dotenv" align="right" width="200" />
+# Engine.IO: the realtime engine
 
-Dotenv is a zero-dependency module that loads environment variables from a `.env` file into [`process.env`](https://nodejs.org/docs/latest/api/process.html#process_process_env). Storing configuration in the environment separate from code is based on [The Twelve-Factor App](https://12factor.net/config) methodology.
+[![Build Status](https://github.com/socketio/engine.io/workflows/CI/badge.svg?branch=master)](https://github.com/socketio/engine.io/actions)
+[![NPM version](https://badge.fury.io/js/engine.io.svg)](http://badge.fury.io/js/engine.io)
 
-[Watch the tutorial](https://www.youtube.com/watch?v=YtkZR0NFd1g)
+`Engine.IO` is the implementation of transport-based
+cross-browser/cross-device bi-directional communication layer for
+[Socket.IO](http://github.com/socketio/socket.io).
 
-&nbsp;
+## How to use
 
-## Usage
+### Server
 
-Install it.
+#### (A) Listening on a port
 
-```sh
-npm install dotenv --save
-```
-
-Create a `.env` file in the root of your project:
-
-```ini
-# .env
-S3_BUCKET="YOURS3BUCKET"
-SECRET_KEY="YOURSECRETKEYGOESHERE"
-```
-
-And as early as possible in your application, import and configure dotenv:
-
-```javascript
-require('dotenv').config() // or import 'dotenv/config' if you're using ES6
-...
-console.log(process.env) // remove this after you've confirmed it is working
-```
-
-That's it. `process.env` now has the keys and values you defined in your `.env` file:
-
-&nbsp;
-
-## Advanced
-
-<details><summary>ES6</summary><br>
-
-Import with [ES6](#how-do-i-use-dotenv-with-import):
-
-```javascript
-import 'dotenv/config'
-```
-
-ES6 import if you need to set config options:
-
-```javascript
-import dotenv from 'dotenv'
-dotenv.config({ path: '/custom/path/to/.env' })
-```
-
-</details>
-<details><summary>bun</summary><br>
-
-```sh
-bun add dotenv
-```
-
-</details>
-<details><summary>yarn</summary><br>
-
-```sh
-yarn add dotenv
-```
-
-</details>
-<details><summary>pnpm</summary><br>
-
-```sh
-pnpm add dotenv
-```
-
-</details>
-<details><summary>Monorepos</summary><br>
-
-For monorepos with a structure like `apps/backend/app.js`, put it the `.env` file in the root of the folder where your `app.js` process runs.
-
-```ini
-# app/backend/.env
-S3_BUCKET="YOURS3BUCKET"
-SECRET_KEY="YOURSECRETKEYGOESHERE"
-```
-
-</details>
-<details><summary>Multiline Values</summary><br>
-
-If you need multiline variables, for example private keys, those are now supported (`>= v15.0.0`) with line breaks:
-
-```ini
-PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-...
-Kh9NV...
-...
------END RSA PRIVATE KEY-----"
-```
-
-Alternatively, you can double quote strings and use the `\n` character:
-
-```ini
-PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nKh9NV...\n-----END RSA PRIVATE KEY-----\n"
-```
-
-</details>
-<details><summary>Comments</summary><br>
-
-Comments may be added to your file on their own line or inline:
-
-```ini
-# This is a comment
-SECRET_KEY=YOURSECRETKEYGOESHERE # comment
-SECRET_HASH="something-with-a-#-hash"
-```
-
-Comments begin where a `#` exists, so if your value contains a `#` please wrap it in quotes. This is a breaking change from `>= v15.0.0` and on.
-
-</details>
-<details><summary>Parsing</summary><br>
-
-The engine which parses the contents of your file containing environment variables is available to use. It accepts a String or Buffer and will return an Object with the parsed keys and values.
-
-```javascript
-const dotenv = require('dotenv')
-const buf = Buffer.from('BASIC=basic')
-const config = dotenv.parse(buf) // will return an object
-console.log(typeof config, config) // object { BASIC : 'basic' }
-```
-
-</details>
-<details><summary>Preload</summary><br>
-
-> Note: Consider using [`dotenvx`](https://github.com/dotenvx/dotenvx) instead of preloading. I am now doing (and recommending) so.
->
-> It serves the same purpose (you do not need to require and load dotenv), adds better debugging, and works with ANY language, framework, or platform. – [motdotla](https://mot.la)
-
-You can use the `--require` (`-r`) [command line option](https://nodejs.org/api/cli.html#-r---require-module) to preload dotenv. By doing this, you do not need to require and load dotenv in your application code.
-
-```bash
-$ node -r dotenv/config your_script.js
-```
-
-The configuration options below are supported as command line arguments in the format `dotenv_config_<option>=value`
-
-```bash
-$ node -r dotenv/config your_script.js dotenv_config_path=/custom/path/to/.env dotenv_config_debug=true
-```
-
-Additionally, you can use environment variables to set configuration options. Command line arguments will precede these.
-
-```bash
-$ DOTENV_CONFIG_<OPTION>=value node -r dotenv/config your_script.js
-```
-
-```bash
-$ DOTENV_CONFIG_ENCODING=latin1 DOTENV_CONFIG_DEBUG=true node -r dotenv/config your_script.js dotenv_config_path=/custom/path/to/.env
-```
-
-</details>
-<details><summary>Variable Expansion</summary><br>
-
-Use [dotenvx](https://github.com/dotenvx/dotenvx) for variable expansion.
-
-Reference and expand variables already on your machine for use in your .env file.
-
-```ini
-# .env
-USERNAME="username"
-DATABASE_URL="postgres://${USERNAME}@localhost/my_database"
-```
 ```js
-// index.js
-console.log('DATABASE_URL', process.env.DATABASE_URL)
+const engine = require('engine.io');
+const server = engine.listen(80);
+
+server.on('connection', socket => {
+  socket.send('utf 8 string');
+  socket.send(Buffer.from([0, 1, 2, 3, 4, 5])); // binary data
+});
 ```
-```sh
-$ dotenvx run --debug -- node index.js
-[dotenvx@0.14.1] injecting env (2) from .env
-DATABASE_URL postgres://username@localhost/my_database
-```
 
-</details>
-<details><summary>Command Substitution</summary><br>
+#### (B) Intercepting requests for a http.Server
 
-Use [dotenvx](https://github.com/dotenvx/dotenvx) for command substitution.
-
-Add the output of a command to one of your variables in your .env file.
-
-```ini
-# .env
-DATABASE_URL="postgres://$(whoami)@localhost/my_database"
-```
 ```js
-// index.js
-console.log('DATABASE_URL', process.env.DATABASE_URL)
-```
-```sh
-$ dotenvx run --debug -- node index.js
-[dotenvx@0.14.1] injecting env (1) from .env
-DATABASE_URL postgres://yourusername@localhost/my_database
-```
+const engine = require('engine.io');
+const http = require('http').createServer().listen(3000);
+const server = engine.attach(http);
 
-</details>
-<details><summary>Encryption</summary><br>
-
-Use [dotenvx](https://github.com/dotenvx/dotenvx) for encryption.
-
-Add encryption to your `.env` files with a single command.
-
-```
-$ dotenvx set HELLO Production -f .env.production
-$ echo "console.log('Hello ' + process.env.HELLO)" > index.js
-
-$ DOTENV_PRIVATE_KEY_PRODUCTION="<.env.production private key>" dotenvx run -- node index.js
-[dotenvx] injecting env (2) from .env.production
-Hello Production
+server.on('connection', socket => {
+  socket.on('message', data => { });
+  socket.on('close', () => { });
+});
 ```
 
-[learn more](https://github.com/dotenvx/dotenvx?tab=readme-ov-file#encryption)
+#### (C) Passing in requests
 
-</details>
-<details><summary>Multiple Environments</summary><br>
+```js
+const engine = require('engine.io');
+const server = new engine.Server();
 
-Use [dotenvx](https://github.com/dotenvx/dotenvx) to manage multiple environments.
+server.on('connection', socket => {
+  socket.send('hi');
+});
 
-Run any environment locally. Create a `.env.ENVIRONMENT` file and use `-f` to load it. It's straightforward, yet flexible.
+// …
+httpServer.on('upgrade', (req, socket, head) => {
+  server.handleUpgrade(req, socket, head);
+});
 
-```bash
-$ echo "HELLO=production" > .env.production
-$ echo "console.log('Hello ' + process.env.HELLO)" > index.js
-
-$ dotenvx run -f=.env.production -- node index.js
-Hello production
-> ^^
+httpServer.on('request', (req, res) => {
+  server.handleRequest(req, res);
+});
 ```
 
-or with multiple .env files
+### Client
 
-```bash
-$ echo "HELLO=local" > .env.local
-$ echo "HELLO=World" > .env
-$ echo "console.log('Hello ' + process.env.HELLO)" > index.js
-
-$ dotenvx run -f=.env.local -f=.env -- node index.js
-Hello local
+```html
+<script src="/path/to/engine.io.js"></script>
+<script>
+  const socket = new eio.Socket('ws://localhost/');
+  socket.on('open', () => {
+    socket.on('message', data => {});
+    socket.on('close', () => {});
+  });
+</script>
 ```
 
-[more environment examples](https://dotenvx.com/docs/quickstart/environments)
+For more information on the client refer to the
+[engine-client](http://github.com/socketio/engine.io-client) repository.
 
-</details>
-<details><summary>Production</summary><br>
+## What features does it have?
 
-Use [dotenvx](https://github.com/dotenvx/dotenvx) for production deploys.
+- **Maximum reliability**. Connections are established even in the presence of:
+  - proxies and load balancers.
+  - personal firewall and antivirus software.
+  - for more information refer to **Goals** and **Architecture** sections
+- **Minimal client size** aided by:
+  - lazy loading of flash transports.
+  - lack of redundant transports.
+- **Scalable**
+  - load balancer friendly
+- **Future proof**
+- **100% Node.JS core style**
+  - No API sugar (left for higher level projects)
 
-Create a `.env.production` file.
+## API
 
-```sh
-$ echo "HELLO=production" > .env.production
+### Server
+
+<hr><br>
+
+#### Top-level
+
+These are exposed by `require('engine.io')`:
+
+##### Events
+
+- `flush`
+    - Called when a socket buffer is being flushed.
+    - **Arguments**
+      - `Socket`: socket being flushed
+      - `Array`: write buffer
+- `drain`
+    - Called when a socket buffer is drained
+    - **Arguments**
+      - `Socket`: socket being flushed
+
+##### Properties
+
+- `protocol` _(Number)_: protocol revision number
+- `Server`: Server class constructor
+- `Socket`: Socket class constructor
+- `Transport` _(Function)_: transport constructor
+- `transports` _(Object)_: map of available transports
+
+##### Methods
+
+- `()`
+    - Returns a new `Server` instance. If the first argument is an `http.Server` then the
+      new `Server` instance will be attached to it. Otherwise, the arguments are passed
+      directly to the `Server` constructor.
+    - **Parameters**
+      - `http.Server`: optional, server to attach to.
+      - `Object`: optional, options object (see `Server#constructor` api docs below)
+
+  The following are identical ways to instantiate a server and then attach it.
+
+```js
+const httpServer; // previously created with `http.createServer();` from node.js api.
+
+// create a server first, and then attach
+const eioServer = require('engine.io').Server();
+eioServer.attach(httpServer);
+
+// or call the module as a function to get `Server`
+const eioServer = require('engine.io')();
+eioServer.attach(httpServer);
+
+// immediately attach
+const eioServer = require('engine.io')(httpServer);
+
+// with custom options
+const eioServer = require('engine.io')(httpServer, {
+  maxHttpBufferSize: 1e3
+});
 ```
 
-Encrypt it.
+- `listen`
+    - Creates an `http.Server` which listens on the given port and attaches WS
+      to it. It returns `501 Not Implemented` for regular http requests.
+    - **Parameters**
+      - `Number`: port to listen on.
+      - `Object`: optional, options object
+      - `Function`: callback for `listen`.
+    - **Options**
+      - All options from `Server.attach` method, documented below.
+      - **Additionally** See Server `constructor` below for options you can pass for creating the new Server
+    - **Returns** `Server`
 
-```sh
-$ dotenvx encrypt -f .env.production
+```js
+const engine = require('engine.io');
+const server = engine.listen(3000, {
+  pingTimeout: 2000,
+  pingInterval: 10000
+});
+
+server.on('connection', /* ... */);
 ```
 
-Set `DOTENV_PRIVATE_KEY_PRODUCTION` (found in `.env.keys`) on your server.
+- `attach`
+    - Captures `upgrade` requests for a `http.Server`. In other words, makes
+      a regular http.Server WebSocket-compatible.
+    - **Parameters**
+      - `http.Server`: server to attach to.
+      - `Object`: optional, options object
+    - **Options**
+      - All options from `Server.attach` method, documented below.
+      - **Additionally** See Server `constructor` below for options you can pass for creating the new Server
+    - **Returns** `Server` a new Server instance.
 
-```
-$ heroku config:set DOTENV_PRIVATE_KEY_PRODUCTION=value
-```
+```js
+const engine = require('engine.io');
+const httpServer = require('http').createServer().listen(3000);
+const server = engine.attach(httpServer, {
+  wsEngine: require('eiows').Server // requires having eiows as dependency
+});
 
-Commit your `.env.production` file to code and deploy.
-
-```
-$ git add .env.production
-$ git commit -m "encrypted .env.production"
-$ git push heroku main
-```
-
-Dotenvx will decrypt and inject the secrets at runtime using `dotenvx run -- node index.js`.
-
-</details>
-<details><summary>Syncing</summary><br>
-
-Use [dotenvx](https://github.com/dotenvx/dotenvx) to sync your .env files.
-
-Encrypt them with `dotenvx encrypt -f .env` and safely include them in source control. Your secrets are securely synced with your git.
-
-This still subscribes to the twelve-factor app rules by generating a decryption key separate from code.
-
-</details>
-<details><summary>More Examples</summary><br>
-
-See [examples](https://github.com/dotenv-org/examples) of using dotenv with various frameworks, languages, and configurations.
-
-* [nodejs](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-nodejs)
-* [nodejs (debug on)](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-nodejs-debug)
-* [nodejs (override on)](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-nodejs-override)
-* [nodejs (processEnv override)](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-custom-target)
-* [esm](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-esm)
-* [esm (preload)](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-esm-preload)
-* [typescript](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-typescript)
-* [typescript parse](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-typescript-parse)
-* [typescript config](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-typescript-config)
-* [webpack](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-webpack)
-* [webpack (plugin)](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-webpack2)
-* [react](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-react)
-* [react (typescript)](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-react-typescript)
-* [express](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-express)
-* [nestjs](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-nestjs)
-* [fastify](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-fastify)
-
-</details>
-
-&nbsp;
-
-## Agents
-
-<img src="https://dotenvx.com/assets/img/as2/9.jpg" height="400" alt="dotenvx-as2" align="right"/>
-
-> Software is changing, and dotenv must change with it—that is why I built [agentic secret storage (AS2)](https://dotenvx.com/as2). Agents run code without humans at terminals, so plaintext `.env` files are the wrong primitive.
->
-> AS2 is built for autonomous software: encrypted by default, zero console access, and cryptography‑first delivery that keeps operators out of the loop.
->
-> It is backed by [Vestauth](https://github.com/vestauth/vestauth), the trusted, pioneering auth layer for agents—giving each agent a cryptographic identity so requests are signed with private keys and verified with public keys. No shared secrets to leak.
->
-> It's what I'm using now. - [motdotla](https://mot.la)
-
-### Quickstart
-
-Install vestauth and initialize your agent.
-
-```bash
-npm i -g vestauth
-
-vestauth agent init
+server.on('connection', /* ... */);
 ```
 
-Your agent `set`s secrets with a simple `curl` endpoint:
+#### Server
 
-```bash
-vestauth agent curl -X POST https://as2.dotenvx.com/set -d '{"KEY":"value"}'
+The main server/manager. _Inherits from EventEmitter_.
+
+##### Events
+
+- `connection`
+    - Fired when a new connection is established.
+    - **Arguments**
+      - `Socket`: a Socket object
+
+- `initial_headers`
+    - Fired on the first request of the connection, before writing the response headers
+    - **Arguments**
+      - `headers` (`Object`): a hash of headers
+      - `req` (`http.IncomingMessage`): the request
+
+- `headers`
+    - Fired on the all requests of the connection, before writing the response headers
+    - **Arguments**
+      - `headers` (`Object`): a hash of headers
+      - `req` (`http.IncomingMessage`): the request
+
+- `connection_error`
+    - Fired when an error occurs when establishing the connection.
+    - **Arguments**
+      - `error`: an object with following properties:
+        - `req` (`http.IncomingMessage`): the request that was dropped
+        - `code` (`Number`): one of `Server.errors`
+        - `message` (`string`): one of `Server.errorMessages`
+        - `context` (`Object`): extra info about the error
+
+| Code | Message |
+| ---- | ------- |
+| 0 | "Transport unknown"
+| 1 | "Session ID unknown"
+| 2 | "Bad handshake method"
+| 3 | "Bad request"
+| 4 | "Forbidden"
+| 5 | "Unsupported protocol version"
+
+
+##### Properties
+
+**Important**: if you plan to use Engine.IO in a scalable way, please
+keep in mind the properties below will only reflect the clients connected
+to a single process.
+
+- `clients` _(Object)_: hash of connected clients by id.
+- `clientsCount` _(Number)_: number of connected clients.
+
+##### Methods
+
+- **constructor**
+    - Initializes the server
+    - **Parameters**
+      - `Object`: optional, options object
+    - **Options**
+      - `pingTimeout` (`Number`): how many ms without a pong packet to
+        consider the connection closed (`20000`)
+      - `pingInterval` (`Number`): how many ms before sending a new ping
+        packet (`25000`)
+      - `upgradeTimeout` (`Number`): how many ms before an uncompleted transport upgrade is cancelled (`10000`)
+      - `maxHttpBufferSize` (`Number`): how many bytes or characters a message
+        can be, before closing the session (to avoid DoS). Default
+        value is `1E6`.
+      - `allowRequest` (`Function`): A function that receives a given handshake
+        or upgrade request as its first parameter, and can decide whether to
+        continue or not. The second argument is a function that needs to be
+        called with the decided information: `fn(err, success)`, where
+        `success` is a boolean value where false means that the request is
+        rejected, and err is an error code.
+      - `transports` (`<Array> String`): transports to allow connections
+        to (`['polling', 'websocket']`)
+      - `allowUpgrades` (`Boolean`): whether to allow transport upgrades
+        (`true`)
+      - `perMessageDeflate` (`Object|Boolean`): parameters of the WebSocket permessage-deflate extension
+        (see [ws module](https://github.com/einaros/ws) api docs). Set to `true` to enable. (defaults to `false`)
+        - `threshold` (`Number`): data is compressed only if the byte size is above this value (`1024`)
+      - `httpCompression` (`Object|Boolean`): parameters of the http compression for the polling transports
+        (see [zlib](http://nodejs.org/api/zlib.html#zlib_options) api docs). Set to `false` to disable. (`true`)
+        - `threshold` (`Number`): data is compressed only if the byte size is above this value (`1024`)
+      - `cookie` (`Object|Boolean`): configuration of the cookie that
+        contains the client sid to send as part of handshake response
+        headers. This cookie might be used for sticky-session. Defaults to not sending any cookie (`false`).
+        See [here](https://github.com/jshttp/cookie#options-1) for all supported options.
+      - `wsEngine` (`Function`): what WebSocket server implementation to use. Specified module must conform to the `ws` interface (see [ws module api docs](https://github.com/websockets/ws/blob/master/doc/ws.md)). Default value is `ws`. An alternative c++ addon is also available by installing `eiows` module.
+      - `cors` (`Object`): the options that will be forwarded to the cors module. See [there](https://github.com/expressjs/cors#configuration-options) for all available options. Defaults to no CORS allowed.
+      - `initialPacket` (`Object`): an optional packet which will be concatenated to the handshake packet emitted by Engine.IO.
+      - `allowEIO3` (`Boolean`): whether to support v3 Engine.IO clients (defaults to `false`)
+- `close`
+    - Closes all clients
+    - **Returns** `Server` for chaining
+- `handleRequest`
+    - Called internally when a `Engine` request is intercepted.
+    - **Parameters**
+      - `http.IncomingMessage`: a node request object
+      - `http.ServerResponse`: a node response object
+    - **Returns** `Server` for chaining
+- `handleUpgrade`
+    - Called internally when a `Engine` ws upgrade is intercepted.
+    - **Parameters** (same as `upgrade` event)
+      - `http.IncomingMessage`: a node request object
+      - `net.Stream`: TCP socket for the request
+      - `Buffer`: legacy tail bytes
+    - **Returns** `Server` for chaining
+- `attach`
+    - Attach this Server instance to an `http.Server`
+    - Captures `upgrade` requests for a `http.Server`. In other words, makes
+      a regular http.Server WebSocket-compatible.
+    - **Parameters**
+      - `http.Server`: server to attach to.
+      - `Object`: optional, options object
+    - **Options**
+      - `path` (`String`): name of the path to capture (`/engine.io`).
+      - `destroyUpgrade` (`Boolean`): destroy unhandled upgrade requests (`true`)
+      - `destroyUpgradeTimeout` (`Number`): milliseconds after which unhandled requests are ended (`1000`)
+- `generateId`
+    - Generate a socket id.
+    - Overwrite this method to generate your custom socket id.
+    - **Parameters**
+      - `http.IncomingMessage`: a node request object
+  - **Returns** A socket id for connected client.
+
+<hr><br>
+
+#### Socket
+
+A representation of a client. _Inherits from EventEmitter_.
+
+##### Events
+
+- `close`
+    - Fired when the client is disconnected.
+    - **Arguments**
+      - `String`: reason for closing
+      - `Object`: description object (optional)
+- `message`
+    - Fired when the client sends a message.
+    - **Arguments**
+      - `String` or `Buffer`: Unicode string or Buffer with binary contents
+- `error`
+    - Fired when an error occurs.
+    - **Arguments**
+      - `Error`: error object
+- `upgrading`
+    - Fired when the client starts the upgrade to a better transport like WebSocket.
+    - **Arguments**
+        - `Object`: the transport
+- `upgrade`
+    - Fired when the client completes the upgrade to a better transport like WebSocket.
+    - **Arguments**
+        - `Object`: the transport
+- `flush`
+    - Called when the write buffer is being flushed.
+    - **Arguments**
+      - `Array`: write buffer
+- `drain`
+    - Called when the write buffer is drained
+- `packet`
+    - Called when a socket received a packet (`message`, `ping`)
+    - **Arguments**
+      - `type`: packet type
+      - `data`: packet data (if type is message)
+- `packetCreate`
+    - Called before a socket sends a packet (`message`, `ping`)
+    - **Arguments**
+      - `type`: packet type
+      - `data`: packet data (if type is message)
+- `heartbeat`
+    - Called when `ping` or `pong` packed is received (depends of client version)
+
+##### Properties
+
+- `id` _(String)_: unique identifier
+- `server` _(Server)_: engine parent reference
+- `request` _(http.IncomingMessage)_: request that originated the Socket
+- `upgraded` _(Boolean)_: whether the transport has been upgraded
+- `readyState` _(String)_: opening|open|closing|closed
+- `transport` _(Transport)_: transport reference
+
+##### Methods
+
+- `send`:
+    - Sends a message, performing `message = toString(arguments[0])` unless
+      sending binary data, which is sent as is.
+    - **Parameters**
+      - `String` | `Buffer` | `ArrayBuffer` | `ArrayBufferView`: a string or any object implementing `toString()`, with outgoing data, or a Buffer or ArrayBuffer with binary data. Also any ArrayBufferView can be sent as is.
+      - `Object`: optional, options object
+      - `Function`: optional, a callback executed when the message gets flushed out by the transport
+    - **Options**
+      - `compress` (`Boolean`): whether to compress sending data. This option might be ignored and forced to be `true` when using polling. (`true`)
+    - **Returns** `Socket` for chaining
+- `close`
+    - Disconnects the client
+    - **Returns** `Socket` for chaining
+
+### Client
+
+<hr><br>
+
+Exposed in the `eio` global namespace (in the browser), or by
+`require('engine.io-client')` (in Node.JS).
+
+For the client API refer to the
+[engine-client](http://github.com/learnboost/engine.io-client) repository.
+
+## Debug / logging
+
+Engine.IO is powered by [debug](http://github.com/visionmedia/debug).
+In order to see all the debug output, run your app with the environment variable
+`DEBUG` including the desired scope.
+
+To see the output from all of Engine.IO's debugging scopes you can use:
+
+```
+DEBUG=engine* node myapp
 ```
 
-And your agent `get`s secrets with a simple `curl` endpoint:
+## Transports
 
-```bash
-vestauth agent curl https://as2.dotenvx.com/get?key=KEY
+- `polling`: XHR / JSONP polling transport.
+- `websocket`: WebSocket transport.
+
+## Plugins
+
+- [engine.io-conflation](https://github.com/EugenDueck/engine.io-conflation): Makes **conflation and aggregation** of messages straightforward.
+
+## Support
+
+The support channels for `engine.io` are the same as `socket.io`:
+  - irc.freenode.net **#socket.io**
+  - [Google Groups](http://groups.google.com/group/socket_io)
+  - [Website](http://socket.io)
+
+## Development
+
+To contribute patches, run tests or benchmarks, make sure to clone the
+repository:
+
+```
+git clone git://github.com/LearnBoost/engine.io.git
 ```
 
-That's it! This new primitive unlocks secrets access for agents without human-in-the-loop, oauth flows, or API keys. It's the future for agents.
+Then:
 
-&nbsp;
+```
+cd engine.io
+npm install
+```
+
+## Tests
+
+Tests run with `npm test`. It runs the server tests that are aided by
+the usage of `engine.io-client`.
+
+Make sure `npm install` is run first.
+
+## Goals
+
+The main goal of `Engine` is ensuring the most reliable realtime communication.
+Unlike the previous Socket.IO core, it always establishes a long-polling
+connection first, then tries to upgrade to better transports that are "tested" on
+the side.
+
+During the lifetime of the Socket.IO projects, we've found countless drawbacks
+to relying on `HTML5 WebSocket` or `Flash Socket` as the first connection
+mechanisms.
+
+Both are clearly the _right way_ of establishing a bidirectional communication,
+with HTML5 WebSocket being the way of the future. However, to answer most business
+needs, alternative traditional HTTP 1.1 mechanisms are just as good as delivering
+the same solution.
+
+WebSocket based connections have two fundamental benefits:
+
+1. **Better server performance**
+  - _A: Load balancers_<br>
+      Load balancing a long polling connection poses a serious architectural nightmare
+      since requests can come from any number of open sockets by the user agent, but
+      they all need to be routed to the process and computer that owns the `Engine`
+      connection. This negatively impacts RAM and CPU usage.
+  - _B: Network traffic_<br>
+      WebSocket is designed around the premise that each message frame has to be
+      surrounded by the least amount of data. In HTTP 1.1 transports, each message
+      frame is surrounded by HTTP headers and chunked encoding frames. If you try to
+      send the message _"Hello world"_ with xhr-polling, the message ultimately
+      becomes larger than if you were to send it with WebSocket.
+  - _C: Lightweight parser_<br>
+      As an effect of **B**, the server has to do a lot more work to parse the network
+      data and figure out the message when traditional HTTP requests are used
+      (as in long polling). This means that another advantage of WebSocket is
+      less server CPU usage.
+
+2. **Better user experience**
+
+    Due to the reasons stated in point **1**, the most important effect of being able
+    to establish a WebSocket connection is raw data transfer speed, which translates
+    in _some_ cases in better user experience.
+
+    Applications with heavy realtime interaction (such as games) will benefit greatly,
+    whereas applications like realtime chat (Gmail/Facebook), newsfeeds (Facebook) or
+    timelines (Twitter) will have negligible user experience improvements.
+
+Having said this, attempting to establish a WebSocket connection directly so far has
+proven problematic:
+
+1. **Proxies**<br>
+    Many corporate proxies block WebSocket traffic.
+
+2. **Personal firewall and antivirus software**<br>
+    As a result of our research, we've found that at least 3 personal security
+    applications block WebSocket traffic.
+
+3. **Cloud application platforms**<br>
+    Platforms like Heroku or No.de have had trouble keeping up with the fast-paced
+    nature of the evolution of the WebSocket protocol. Applications therefore end up
+    inevitably using long polling, but the seamless installation experience of
+    Socket.IO we strive for (_"require() it and it just works"_) disappears.
+
+Some of these problems have solutions. In the case of proxies and personal programs,
+however, the solutions many times involve upgrading software. Experience has shown
+that relying on client software upgrades to deliver a business solution is
+fruitless: the very existence of this project has to do with a fragmented panorama
+of user agent distribution, with clients connecting with latest versions of the most
+modern user agents (Chrome, Firefox and Safari), but others with versions as low as
+IE 5.5.
+
+From the user perspective, an unsuccessful WebSocket connection can translate in
+up to at least 10 seconds of waiting for the realtime application to begin
+exchanging data. This **perceptively** hurts user experience.
+
+To summarize, **Engine** focuses on reliability and user experience first, marginal
+potential UX improvements and increased server performance second. `Engine` is the
+result of all the lessons learned with WebSocket in the wild.
+
+## Architecture
+
+The main premise of `Engine`, and the core of its existence, is the ability to
+swap transports on the fly. A connection starts as xhr-polling, but it can
+switch to WebSocket.
+
+The central problem this poses is: how do we switch transports without losing
+messages?
+
+`Engine` only switches from polling to another transport in between polling
+cycles. Since the server closes the connection after a certain timeout when
+there's no activity, and the polling transport implementation buffers messages
+in between connections, this ensures no message loss and optimal performance.
+
+Another benefit of this design is that we workaround almost all the limitations
+of **Flash Socket**, such as slow connection times, increased file size (we can
+safely lazy load it without hurting user experience), etc.
 
 ## FAQ
 
-<details><summary>Should I commit my `.env` file?</summary><br/>
+### Can I use engine without Socket.IO ?
 
-No.
+Absolutely. Although the recommended framework for building realtime applications
+is Socket.IO, since it provides fundamental features for real-world applications
+such as multiplexing, reconnection support, etc.
 
-Unless you encrypt it with [dotenvx](https://github.com/dotenvx/dotenvx). Then we recommend you do.
+`Engine` is to Socket.IO what Connect is to Express. An essential piece for building
+realtime frameworks, but something you _probably_ won't be using for building
+actual applications.
 
-</details>
-<details><summary>What about variable expansion?</summary><br/>
+### Does the server serve the client?
 
-Use [dotenvx](https://github.com/dotenvx/dotenvx).
+No. The main reason is that `Engine` is meant to be bundled with frameworks.
+Socket.IO includes `Engine`, therefore serving two clients is not necessary. If
+you use Socket.IO, including
 
-</details>
-<details><summary>Should I have multiple `.env` files?</summary><br/>
-
-We recommend creating one `.env` file per environment. Use `.env` for local/development, `.env.production` for production and so on. This still follows the twelve factor principles as each is attributed individually to its own environment. Avoid custom set ups that work in inheritance somehow (`.env.production` inherits values form `.env` for example). It is better to duplicate values if necessary across each `.env.environment` file.
-
-> In a twelve-factor app, env vars are granular controls, each fully orthogonal to other env vars. They are never grouped together as “environments”, but instead are independently managed for each deploy. This is a model that scales up smoothly as the app naturally expands into more deploys over its lifetime.
->
-> – [The Twelve-Factor App](http://12factor.net/config)
-
-Additionally, we recommend using [dotenvx](https://github.com/dotenvx/dotenvx) to encrypt and manage these.
-
-</details>
-
-<details><summary>How do I use dotenv with `import`?</summary><br/>
-
-Simply..
-
-```javascript
-// index.mjs (ESM)
-import 'dotenv/config' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import express from 'express'
+```html
+<script src="/socket.io/socket.io.js">
 ```
 
-A little background..
+has you covered.
 
-> When you run a module containing an `import` declaration, the modules it imports are loaded first, then each module body is executed in a depth-first traversal of the dependency graph, avoiding cycles by skipping anything already executed.
->
-> – [ES6 In Depth: Modules](https://hacks.mozilla.org/2015/08/es6-in-depth-modules/)
+### Can I implement `Engine` in other languages?
 
-What does this mean in plain language? It means you would think the following would work but it won't.
+Absolutely. The [engine.io-protocol](https://github.com/socketio/engine.io-protocol)
+repository contains the most up-to-date description of the specification
+at all times.
 
-`errorReporter.mjs`:
-```js
-class Client {
-  constructor (apiKey) {
-    console.log('apiKey', apiKey)
+## License
 
-    this.apiKey = apiKey
-  }
-}
+(The MIT License)
 
-export default new Client(process.env.API_KEY)
-```
-`index.mjs`:
-```js
-// Note: this is INCORRECT and will not work
-import * as dotenv from 'dotenv'
-dotenv.config()
+Copyright (c) 2014 Guillermo Rauch &lt;guillermo@learnboost.com&gt;
 
-import errorReporter from './errorReporter.mjs' // process.env.API_KEY will be blank!
-```
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
 
-`process.env.API_KEY` will be blank.
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
 
-Instead, `index.mjs` should be written as..
-
-```js
-import 'dotenv/config'
-
-import errorReporter from './errorReporter.mjs'
-```
-
-Does that make sense? It's a bit unintuitive, but it is how importing of ES6 modules work. Here is a [working example of this pitfall](https://github.com/dotenv-org/examples/tree/master/usage/dotenv-es6-import-pitfall).
-
-There are two alternatives to this approach:
-
-1. Preload with dotenvx: `dotenvx run -- node index.js` (_Note: you do not need to `import` dotenv with this approach_)
-2. Create a separate file that will execute `config` first as outlined in [this comment on #133](https://github.com/motdotla/dotenv/issues/133#issuecomment-255298822)
-</details>
-
-<details><summary>Can I customize/write plugins for dotenv?</summary><br/>
-
-Yes! `dotenv.config()` returns an object representing the parsed `.env` file. This gives you everything you need to continue setting values on `process.env`. For example:
-
-```js
-const dotenv = require('dotenv')
-const variableExpansion = require('dotenv-expand')
-const myEnv = dotenv.config()
-variableExpansion(myEnv)
-```
-
-</details>
-<details><summary>What rules does the parsing engine follow?</summary><br/>
-
-The parsing engine currently supports the following rules:
-
-- `BASIC=basic` becomes `{BASIC: 'basic'}`
-- empty lines are skipped
-- lines beginning with `#` are treated as comments
-- `#` marks the beginning of a comment (unless when the value is wrapped in quotes)
-- empty values become empty strings (`EMPTY=` becomes `{EMPTY: ''}`)
-- inner quotes are maintained (think JSON) (`JSON={"foo": "bar"}` becomes `{JSON:"{\"foo\": \"bar\"}"`)
-- whitespace is removed from both ends of unquoted values (see more on [`trim`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim)) (`FOO=  some value  ` becomes `{FOO: 'some value'}`)
-- single and double quoted values are escaped (`SINGLE_QUOTE='quoted'` becomes `{SINGLE_QUOTE: "quoted"}`)
-- single and double quoted values maintain whitespace from both ends (`FOO="  some value  "` becomes `{FOO: '  some value  '}`)
-- double quoted values expand new lines (`MULTILINE="new\nline"` becomes
-
-```
-{MULTILINE: 'new
-line'}
-```
-
-- backticks are supported (`` BACKTICK_KEY=`This has 'single' and "double" quotes inside of it.` ``)
-
-</details>
-<details><summary>What about syncing and securing .env files?</summary><br/>
-
-Use [dotenvx](https://github.com/dotenvx/dotenvx) to unlock syncing encrypted .env files over git.
-
-</details>
-<details><summary>What if I accidentally commit my `.env` file to code?</summary><br/>
-
-Remove it, [remove git history](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository) and then install the [git pre-commit hook](https://github.com/dotenvx/dotenvx#pre-commit) to prevent this from ever happening again. 
-
-```
-npm i -g @dotenvx/dotenvx
-dotenvx precommit --install
-```
-
-</details>
-<details><summary>What happens to environment variables that were already set?</summary><br/>
-
-By default, we will never modify any environment variables that have already been set. In particular, if there is a variable in your `.env` file which collides with one that already exists in your environment, then that variable will be skipped.
-
-If instead, you want to override `process.env` use the `override` option.
-
-```javascript
-require('dotenv').config({ override: true })
-```
-
-</details>
-<details><summary>How can I prevent committing my `.env` file to a Docker build?</summary><br/>
-
-Use the [docker prebuild hook](https://dotenvx.com/docs/features/prebuild).
-
-```bash
-# Dockerfile
-...
-RUN curl -fsS https://dotenvx.sh/ | sh
-...
-RUN dotenvx prebuild
-CMD ["dotenvx", "run", "--", "node", "index.js"]
-```
-
-</details>
-<details><summary>How come my environment variables are not showing up for React?</summary><br/>
-
-Your React code is run in Webpack, where the `fs` module or even the `process` global itself are not accessible out-of-the-box. `process.env` can only be injected through Webpack configuration.
-
-If you are using [`react-scripts`](https://www.npmjs.com/package/react-scripts), which is distributed through [`create-react-app`](https://create-react-app.dev/), it has dotenv built in but with a quirk. Preface your environment variables with `REACT_APP_`. See [this stack overflow](https://stackoverflow.com/questions/42182577/is-it-possible-to-use-dotenv-in-a-react-project) for more details.
-
-If you are using other frameworks (e.g. Next.js, Gatsby...), you need to consult their documentation for how to inject environment variables into the client.
-
-</details>
-<details><summary>Why is the `.env` file not loading my environment variables successfully?</summary><br/>
-
-Most likely your `.env` file is not in the correct place. [See this stack overflow](https://stackoverflow.com/questions/42335016/dotenv-file-is-not-loading-environment-variables).
-
-Turn on debug mode and try again..
-
-```js
-require('dotenv').config({ debug: true })
-```
-
-You will receive a helpful error outputted to your console.
-
-</details>
-<details><summary>Why am I getting the error `Module not found: Error: Can't resolve 'crypto|os|path'`?</summary><br/>
-
-You are using dotenv on the front-end and have not included a polyfill. Webpack < 5 used to include these for you. Do the following:
-
-```bash
-npm install node-polyfill-webpack-plugin
-```
-
-Configure your `webpack.config.js` to something like the following.
-
-```js
-require('dotenv').config()
-
-const path = require('path');
-const webpack = require('webpack')
-
-const NodePolyfillPlugin = require('node-polyfill-webpack-plugin')
-
-module.exports = {
-  mode: 'development',
-  entry: './src/index.ts',
-  output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-  },
-  plugins: [
-    new NodePolyfillPlugin(),
-    new webpack.DefinePlugin({
-      'process.env': {
-        HELLO: JSON.stringify(process.env.HELLO)
-      }
-    }),
-  ]
-};
-```
-
-Alternatively, just use [dotenv-webpack](https://github.com/mrsteele/dotenv-webpack) which does this and more behind the scenes for you.
-
-</details>
-
-&nbsp;
-
-## Docs
-
-Dotenv exposes four functions:
-
-* `config`
-* `parse`
-* `populate`
-
-### Config
-
-`config` will read your `.env` file, parse the contents, assign it to
-[`process.env`](https://nodejs.org/docs/latest/api/process.html#process_process_env),
-and return an Object with a `parsed` key containing the loaded content or an `error` key if it failed.
-
-```js
-const result = dotenv.config()
-
-if (result.error) {
-  throw result.error
-}
-
-console.log(result.parsed)
-```
-
-You can additionally, pass options to `config`.
-
-#### Options
-
-##### path
-
-Default: `path.resolve(process.cwd(), '.env')`
-
-Specify a custom path if your file containing environment variables is located elsewhere.
-
-```js
-require('dotenv').config({ path: '/custom/path/to/.env' })
-```
-
-By default, `config` will look for a file called .env in the current working directory.
-
-Pass in multiple files as an array, and they will be parsed in order and combined with `process.env` (or `option.processEnv`, if set). The first value set for a variable will win, unless the `options.override` flag is set, in which case the last value set will win.  If a value already exists in `process.env` and the `options.override` flag is NOT set, no changes will be made to that value. 
-
-```js  
-require('dotenv').config({ path: ['.env.local', '.env'] })
-```
-
-##### quiet
-
-Default: `false`
-
-Suppress runtime logging message.
-
-```js
-// index.js
-require('dotenv').config({ quiet: false }) // change to true to suppress
-console.log(`Hello ${process.env.HELLO}`)
-```
-
-```ini
-# .env
-HELLO=World
-```
-
-```sh
-$ node index.js
-[dotenv@17.0.0] injecting env (1) from .env
-Hello World
-```
-
-##### encoding
-
-Default: `utf8`
-
-Specify the encoding of your file containing environment variables.
-
-```js
-require('dotenv').config({ encoding: 'latin1' })
-```
-
-##### debug
-
-Default: `false`
-
-Turn on logging to help debug why certain keys or values are not being set as you expect.
-
-```js
-require('dotenv').config({ debug: process.env.DEBUG })
-```
-
-##### override
-
-Default: `false`
-
-Override any environment variables that have already been set on your machine with values from your .env file(s). If multiple files have been provided in `option.path` the override will also be used as each file is combined with the next. Without `override` being set, the first value wins. With `override` set the last value wins. 
-
-```js
-require('dotenv').config({ override: true })
-```
-
-##### processEnv
-
-Default: `process.env`
-
-Specify an object to write your environment variables to. Defaults to `process.env` environment variables.
-
-```js
-const myObject = {}
-require('dotenv').config({ processEnv: myObject })
-
-console.log(myObject) // values from .env
-console.log(process.env) // this was not changed or written to
-```
-
-### Parse
-
-The engine which parses the contents of your file containing environment
-variables is available to use. It accepts a String or Buffer and will return
-an Object with the parsed keys and values.
-
-```js
-const dotenv = require('dotenv')
-const buf = Buffer.from('BASIC=basic')
-const config = dotenv.parse(buf) // will return an object
-console.log(typeof config, config) // object { BASIC : 'basic' }
-```
-
-#### Options
-
-##### debug
-
-Default: `false`
-
-Turn on logging to help debug why certain keys or values are not being set as you expect.
-
-```js
-const dotenv = require('dotenv')
-const buf = Buffer.from('hello world')
-const opt = { debug: true }
-const config = dotenv.parse(buf, opt)
-// expect a debug message because the buffer is not in KEY=VAL form
-```
-
-### Populate
-
-The engine which populates the contents of your .env file to `process.env` is available for use. It accepts a target, a source, and options. This is useful for power users who want to supply their own objects.
-
-For example, customizing the source:
-
-```js
-const dotenv = require('dotenv')
-const parsed = { HELLO: 'world' }
-
-dotenv.populate(process.env, parsed)
-
-console.log(process.env.HELLO) // world
-```
-
-For example, customizing the source AND target:
-
-```js
-const dotenv = require('dotenv')
-const parsed = { HELLO: 'universe' }
-const target = { HELLO: 'world' } // empty object
-
-dotenv.populate(target, parsed, { override: true, debug: true })
-
-console.log(target) // { HELLO: 'universe' }
-```
-
-#### options
-
-##### Debug
-
-Default: `false`
-
-Turn on logging to help debug why certain keys or values are not being populated as you expect.
-
-##### override
-
-Default: `false`
-
-Override any environment variables that have already been set.
-
-&nbsp;
-
-## CHANGELOG
-
-See [CHANGELOG.md](CHANGELOG.md)
-
-&nbsp;
-
-## Who's using dotenv?
-
-[These npm modules depend on it.](https://www.npmjs.com/browse/depended/dotenv)
-
-Projects that expand it often use the [keyword "dotenv" on npm](https://www.npmjs.com/search?q=keywords:dotenv).
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
